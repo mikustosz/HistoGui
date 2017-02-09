@@ -1,4 +1,4 @@
-ROOT_CONFIG = `../root/bin/root-config --cflags --glibs`
+ROOT_CONFIG = `${ROOTSYS}/bin/root-config --cflags --glibs`
 FLAGS = -std=c++11 -fPIC
 IDIR = -Iinclude
 	
@@ -6,7 +6,7 @@ SRC = $(wildcard src/*.cpp)
 DEPS = $(wildcard include/*.h)
 OBJ = $(patsubst src/%.cpp, obj/%.o, ${SRC})
 
-lib/libdataio.so : ${OBJ} ${DEPS}
+lib/libdataio.so : ${OBJ}
 	g++ --shared -o $@ $^ ${ROOT_CONFIG} ${FLAGS}
 	
 obj/%.o : src/%.cpp
