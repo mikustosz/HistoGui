@@ -1,5 +1,5 @@
 IDIR = -Iinclude -I../DataIO/include `wx-config --cppflags`
-ROOT_LIBS = `../root/bin/root-config --glibs`
+ROOT_LIBS = `${ROOTSYS}/bin/root-config --glibs`
 SRC = $(wildcard src/*.cpp)
 LINKER = `wx-config --libs` -L../DataIO/lib -ldataio -lboost_program_options
 FLAGS = -std=c++11 -g
