@@ -10,6 +10,7 @@
 #include<boost/property_tree/json_parser.hpp>
 #include <cstdlib>
 #include <iosfwd>
+#include <iostream>
 using namespace std;
 /**
  * UNUSED, loads config from json file, aside from that the same as ptree version.
