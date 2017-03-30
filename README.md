@@ -13,9 +13,15 @@ Below we have "option" node, comprising self-evident description of our files st
 To generate a binary datafile one needs to build ParseTree program, specifying path to the 
 ROOT config tool in DataIO/Makefile and running
 
-``` make ParseTree``` 
+``` make all``` 
 
-in DataIO directory, provide config.json file and run the tool, typing just:
+in DataIO directory, provide config.json file and run the tool.
+Before running the tool set the LD_LIBRARY_PATH variable for
+library location:
+
+``` export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/lib ```
+
+ typing just:
 
 ``` ./ParseTree ```
  
