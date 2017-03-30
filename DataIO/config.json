@@ -1,7 +1,7 @@
 {
 "dat_file1":{
    "options":{
-   	"numOfEvents":10000,
+   	"numOfEvents":50500,
    	"treeName":"TestTree",
    	"branchName":"entry",
    	"myDataFile":"bindata",

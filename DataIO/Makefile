@@ -6,7 +6,9 @@ SRC = $(wildcard src/*.cpp)
 DEPS = $(wildcard include/*.h)
 OBJ = $(patsubst src/%.cpp, obj/%.o, ${SRC})
 
-lib/libdataio.so : ${OBJ}
+all: lib/libdataio.so ParseTree
+
+lib/libdataio.so : ${OBJ} ${DEPS}
 	g++ --shared -o $@ $^ ${ROOT_CONFIG} ${FLAGS}
 	
 obj/%.o : src/%.cpp
@@ -23,3 +25,4 @@ ParseTree: ParseTree.cpp
 clean :
 	rm -f obj/*
 	rm -f lib/*
+	rm -f ParseTree
