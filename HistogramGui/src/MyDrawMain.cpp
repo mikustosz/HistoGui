@@ -6,8 +6,11 @@
 
  **************************************************************/
 
+#define RESET_BUTTON_ID 1234567
+#define LEFT_BUTTON_DOWN true
+#define RIGHT_BUTTON_DOWN false
 
-#include"MyDrawMain.h"
+#include "MyDrawMain.h"
 #include "Utils.h"
 #include "wx/font.h"
 #include <algorithm>
@@ -36,13 +39,15 @@ BEGIN_EVENT_TABLE(HistoDrawPane, wxPanel)
  EVT_MOTION(BasicDrawPane::mouseMoved)
 
  EVT_LEFT_UP(BasicDrawPane::mouseReleased)
- EVT_RIGHT_DOWN(BasicDrawPane::rightClick)
  EVT_LEAVE_WINDOW(BasicDrawPane::mouseLeftWindow)
  EVT_KEY_DOWN(BasicDrawPane::keyPressed)
  EVT_KEY_UP(BasicDrawPane::keyReleased)
  EVT_MOUSEWHEEL(BasicDrawPane::mouseWheelMoved)
  */
-EVT_LEFT_DOWN(HistoDrawPane::mouseDown)
+EVT_LEFT_DOWN(HistoDrawPane::leftMouseDown)
+EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
+EVT_BUTTON(RESET_BUTTON_ID, HistoDrawPane::resetAllCuts) //TODO magic number
+
 // catch paint events
 EVT_PAINT(HistoDrawPane::paintEvent)
 EVT_SIZE(HistoDrawPane::sizeEvent)
@@ -64,12 +69,7 @@ END_EVENT_TABLE()
 HistoDrawPane::HistoDrawPane(wxFrame* parent) :
 wxPanel(parent),   hc("config.json")//, myHist(100,0,300),myHist1(100,-100,100), myHist2(100,0,100),  myHist3(100,0,100)
 {
-
-	loCut = new wxRadioButton(this, -1,
-			wxT("Low"), wxPoint(5, 5), wxDefaultSize, wxRB_GROUP);
-
-	hiCut = new wxRadioButton(this, -1,
-			wxT("High"), wxPoint(100, 5));
+	resetButton = new wxButton(this, RESET_BUTTON_ID, wxT("Reset"), wxPoint(5, 5), wxDefaultSize, 0); // TODO liczba
 	if(hc.good){
 		histovec = hc.buildGuiHistos();
 		hc.createLogicalHistos();
@@ -193,7 +193,7 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from, w
 		dc.SetPen( wxPen( wxColor(255,0,0), 2) );
 		dc.DrawLine(wxPoint(x, from.y),wxPoint(x, from.y+hsize.y));
 	}
-	if(hist.cutHigh){
+	if(hist.cutHigh && hist.cutHigh != hist.bins->size()){
 		double c = hist.cutHigh; c/= hist.bins->size();
 		int x = from.x + hsize.x*c;
 		dc.SetPen( wxPen( wxColor(0,255,0), 2) );
@@ -204,19 +204,39 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from, w
 /** Here we react to clicks at point x,y, by setting cuts to the given histogram and resetting
  * all the histograms from the HistoCreator it belongs to
  */
-void HistoDrawPane::mouseDown(wxMouseEvent& event) {
-
+void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 	long int x,y;
 	event.GetPosition(&x,&y);
 	wxPoint p=event.GetPosition();
-	int a =0;
+	int a = 0;
 	for(;a<histovec.size();++a)
-		if(histovec[a].r.Contains(p))break;;
+		if(histovec[a].r.Contains(p))
+			break;
 	if(a==histovec.size()) return;
-	int cut =histovec[a].histo.bins->size()* ((double)(x - histovec[a].r.x)) / (histovec[a].r.width);
-	if(loCut->GetValue())
-		histovec[a].histo.setCutLow(cut);
-	else if(hiCut->GetValue())histovec[a].histo.setCutHigh(cut);
 
+	int cut = histovec[a].histo.bins->size()* ((double)(x - histovec[a].r.x)) / (histovec[a].r.width);
+	if (isLeftMouseDown) {
+		if (histovec[a].histo.cutHigh && cut >= histovec[a].histo.cutHigh) return;
+		histovec[a].histo.setCutLow(cut);
+	} else {
+		if (cut <= histovec[a].histo.cutLow) return;
+		histovec[a].histo.setCutHigh(cut);
+	}
+
+	Refresh();
+}
+
+void HistoDrawPane::leftMouseDown(wxMouseEvent& event) {
+	this->mouseDown(event, LEFT_BUTTON_DOWN);
+}
+
+void HistoDrawPane::rightMouseDown(wxMouseEvent& event) {
+	this->mouseDown(event, RIGHT_BUTTON_DOWN);
+}
+void HistoDrawPane::resetAllCuts(wxCommandEvent& event){
+	for(int i = 0; i < histovec.size(); ++i) {
+		histovec[i].histo.setCutLow(0);
+		histovec[i].histo.setCutHigh(histovec[i].histo.bins->size());
+	}
 	Refresh();
 }

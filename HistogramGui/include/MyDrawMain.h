@@ -17,7 +17,7 @@
 #include "wx/sizer.h"
 #include <vector>
 
-#include"HistoContainer.h"
+#include "HistoContainer.h"
 #include "MyHistogramWrapper.h"
 
 
@@ -29,14 +29,12 @@ class HistoDrawPane : public wxPanel
 	int old_width, old_height;
 
 public:
-    //MyHistogram myHist,myHist1,myHist2,myHist3;//,myHist2;
-	///Radio button to select low cut
-	wxRadioButton * loCut,
-	///Radio button to select high cut
-	* hiCut;
+    // Reset cuts button
+    wxButton * resetButton;
+
 	///Container for histoCreators
 	HistoContainer hc;
-	/// Histogram wrappers with is position and dimmensions
+	/// Histogram wrappers with is position and dimensions
     std::vector<HistoGraph> histovec;
     ///Generic constructor
     HistoDrawPane(wxFrame* parent);
@@ -48,7 +46,10 @@ public:
     void render(wxDC& dc);
     void drawHisto(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
     void drawTics(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
-    void mouseDown(wxMouseEvent& event);
+    void mouseDown(wxMouseEvent& event, bool isLeftMouseDown); // TODO make private or sth
+    void leftMouseDown(wxMouseEvent& event);
+    void rightMouseDown(wxMouseEvent& event);
+    void resetAllCuts(wxCommandEvent& event);
 
     void setHistSizes();
     ~HistoDrawPane(){}
