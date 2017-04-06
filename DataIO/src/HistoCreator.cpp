@@ -132,7 +132,7 @@ void HistoCreator::runTests(){
 		for(int j =0; j<histos[i].size();++j){
 			errors+= histos[i][j]!= histos_copy[i][j];
 		}
-	cout<<"Errors: "<<errors<<".";
-	if(errors == 0) cout<<" Everything is fine.";
-	else cerr<<"What a terrible failure";
+	cout<<"Errors: "<<errors<<"." << endl;
+	if(errors == 0) cout<<" Everything is fine." << endl;
+	else cerr<<"What a terrible failure" << endl;
 }

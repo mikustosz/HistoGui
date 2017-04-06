@@ -19,7 +19,7 @@ in DataIO directory, provide config.json file and run the tool.
 Before running the tool set the LD_LIBRARY_PATH variable for
 library location:
 
-``` export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/lib ```
+``` export LD_LIBRARY_PATH=$ROOTSYS/lib:$PWD/lib ```
 
  typing just:
 

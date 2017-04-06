@@ -15,7 +15,7 @@ obj/%.o : src/%.cpp
 	g++ -o $@ -c $^ ${FLAGS} ${IDIR} ${ROOT_CONFIG}
 	
 ParseTree: ParseTree.cpp
-	g++ -o $@ $^ -Wl,--no-as-needed -I./include -L./lib  ${ROOT_CONFIG} -ldataio -lboost_program_options
+	g++ -o $@ $^ ${FLAGS} -Wl,--no-as-needed -I./include -L./lib  ${ROOT_CONFIG} -ldataio -lboost_program_options
 	
 %.o : %.cpp
 	g++ -o $@ -c $^
