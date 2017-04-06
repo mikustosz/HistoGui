@@ -6,39 +6,36 @@
  **************************************************************/
 #ifndef UTILS_H
 #define UTILS_H
-#include<sstream>
-#include<string>
+#include <sstream>
+#include <string>
 
 using namespace std;
 /**
  *
  * String operations, etc. Wrapper class, never created, only owns static methods
  */
-class Utils
-{
+class Utils {
 
 public:
 
-    /// convert "something" to string
-    template<class T>
-    static string itos(T t1,unsigned int i =4)
-    {
-        stringstream ss;
-        ss.precision(i);
-        ss<<fixed;
-        ss<< t1;
-        return ss.str();
-    }
-    /// convert string to something
-    template<class T>
-    static T stoi(string t1)
-    {
-        stringstream ss;
-        ss<< t1;
-        T t2;
-        ss >> t2;
-        return t2;
-    }
+	/// convert "something" to string
+	template<class T>
+	static string itos(T t1, unsigned int i = 4) {
+		stringstream ss;
+		ss.precision(i);
+		ss << fixed;
+		ss << t1;
+		return ss.str();
+	}
+	/// convert string to something
+	template<class T>
+	static T stoi(string t1) {
+		stringstream ss;
+		ss << t1;
+		T t2;
+		ss >> t2;
+		return t2;
+	}
 protected:
 private:
 };

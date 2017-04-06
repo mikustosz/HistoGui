@@ -9,7 +9,7 @@
 #define INCLUDE_HISTOCONFIG_H_
 #include <string>
 #include <vector>
-#include<cmath>
+#include <cmath>
 #include <boost/property_tree/ptree.hpp>
 using std::string;
 using std::vector;
@@ -17,7 +17,7 @@ typedef short unsigned int SUINT;
 using namespace boost::property_tree;
 ///A configuration container for histograms created from one ROOT branch (as series of events).
 
-class HistogramConfig{
+class HistogramConfig {
 public:
 	///number of histograms in given binary file/ROOT file
 	int numOfHistos;
@@ -27,7 +27,7 @@ public:
 	int multiplexedByteLenOfEvent;
 	string treeName, branchName, rootDataFile, myDataFile;
 	///Basic single histogram config aggregate, contains its name, value range, byte length (log_128(bins)).
-	struct MyHisto{
+	struct MyHisto {
 		string name;
 		int bins, bytes;
 		float min, max;
@@ -41,8 +41,7 @@ public:
 };
 /// Returns how much bytes do we need to save given unsigned int
 inline int HistogramConfig::noOfBytes(int i) {
-		return (log(i)/log(2.0)+7.9999999)/8;
+	return (log(i) / log(2.0) + 7.9999999) / 8;
 }
-
 
 #endif /* INCLUDE_HISTOCONFIG_H_ */

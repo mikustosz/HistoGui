@@ -5,9 +5,6 @@
  *      Author: krystian892
  */
 
-
-
-
 #include <HistoCreator.h>
 #include "TH1F.h"
 #include "TFile.h"
@@ -25,12 +22,12 @@
 
 using namespace boost::property_tree;
 using namespace std;
-int main(){
+int main() {
 	ptree pt;
-	read_json("config.json",pt);
-	for(auto & p : pt){
+	read_json("config.json", pt);
+	for (auto & p : pt) {
 
-		cout<<"\n"<<p.first;
+		cout << "\n" << p.first;
 		HistoCreator data(p.second);
 		data.runTests();
 	}

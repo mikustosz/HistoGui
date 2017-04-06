@@ -1,6 +1,7 @@
 # Eclipse auxiliary files
 .project
 .cproject
+.settings/
 
 # Exe files
 HistogramGui/myApp

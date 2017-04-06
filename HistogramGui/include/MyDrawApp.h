@@ -12,12 +12,11 @@
 #include "MyDrawMain.h"
 
 /// Generic wxWidgets App class, nothing special here
-class MyHistoApp: public wxApp
-{
-    bool OnInit();
+class MyHistoApp: public wxApp {
+	bool OnInit();
 
-    wxFrame *frame;
-    HistoDrawPane * drawPane;
+	wxFrame *frame;
+	HistoDrawPane * drawPane;
 public:
 
 };

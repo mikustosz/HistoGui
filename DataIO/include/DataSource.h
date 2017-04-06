@@ -14,16 +14,21 @@ using namespace std;
 using std::fstream;
 using std::map;
 ///Abstract DataSource, used by HistoCreator to load multiplexed data
-class IDataSource{
+class IDataSource {
 public:
 
-	IDataSource(){}
+	IDataSource() {
+	}
 	virtual unsigned int read(int bytes)=0;
-	virtual bool good(){return true;}
-	virtual ~IDataSource(){};
+	virtual bool good() {
+		return true;
+	}
+	virtual ~IDataSource() {
+	}
+	;
 };
 ///Regular DataSource, loads from multiplexed binary file each time.
-class DataSource :public IDataSource{
+class DataSource: public IDataSource {
 	fstream file1;
 public:
 	DataSource(string path);
@@ -32,17 +37,20 @@ public:
 };
 struct DataBuffer;
 ///Singleton caching facility for RAM-based PreloadedDataSource's
-class PreloadContainer{
+class PreloadContainer {
 	map<string, long int> lengths;
 	map<string, DataBuffer*> buffers;
 	long int getLength(string path);
 public:
-	static PreloadContainer& get(){ static PreloadContainer inst; return inst;}
+	static PreloadContainer& get() {
+		static PreloadContainer inst;
+		return inst;
+	}
 	DataBuffer * getDataBuffer(string path);
 	IDataSource * getDataSource(string path);
 };
 ///Cached DataSource, data stored in RAM during program run.
-class PreloadedDataSource : public IDataSource{
+class PreloadedDataSource: public IDataSource {
 	DataBuffer * buffer;
 	long int iter;
 public:

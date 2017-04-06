@@ -20,19 +20,18 @@
 
 IMPLEMENT_APP(MyHistoApp)
 
+bool MyHistoApp::OnInit() {
+	wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
+	frame = new wxFrame((wxFrame *) NULL, -1, wxT("Hello wxDC"),
+			wxPoint(50, 50), wxSize(800, 600));
 
-bool MyHistoApp::OnInit()
-{
-    wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-    frame = new wxFrame((wxFrame *)NULL, -1,  wxT("Hello wxDC"), wxPoint(50,50), wxSize(800,600));
+	drawPane = new HistoDrawPane((wxFrame*) frame);
 
-    drawPane = new HistoDrawPane( (wxFrame*) frame );
+	sizer->Add(drawPane, 1, wxEXPAND);
 
-    sizer->Add(drawPane, 1, wxEXPAND);
+	frame->SetSizer(sizer);
+	frame->SetAutoLayout(true);
 
-    frame->SetSizer(sizer);
-    frame->SetAutoLayout(true);
-
-    frame->Show();
-    return true;
+	frame->Show();
+	return true;
 }

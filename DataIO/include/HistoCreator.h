@@ -13,17 +13,16 @@
 using std::string;
 using std::vector;
 
-
 ///Creates histos from single IDataSource
 class HistoCreator {
 	string configPath;
 
 public:
-	vector<unsigned int> cutsLow,cutsHigh;
+	vector<unsigned int> cutsLow, cutsHigh;
 	HistogramConfig hc;
-	vector< vector<unsigned int> > histos;
-	HistoCreator(string configPath );
-	HistoCreator(ptree pt );
+	vector<vector<unsigned int> > histos;
+	HistoCreator(string configPath);
+	HistoCreator(ptree pt);
 	void processTree();
 	void createHistos();
 	void createHistosOld();
