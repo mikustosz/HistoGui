@@ -9,7 +9,7 @@
 #define INCLUDE_HISTOCREATOR_H_
 #include <string>
 #include <vector>
-#include"HistoConfig.h"
+#include "HistoConfig.h"
 using std::string;
 using std::vector;
 

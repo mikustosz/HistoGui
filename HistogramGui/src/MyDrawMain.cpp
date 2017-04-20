@@ -6,15 +6,17 @@
 
  **************************************************************/
 
-#define RESET_BUTTON_ID 1234567
-#define LEFT_BUTTON_DOWN true
-#define RIGHT_BUTTON_DOWN false
-
 #include "MyDrawMain.h"
 #include "Utils.h"
 #include "wx/font.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <wx/filedlg.h>
+#include <wx/wfstream.h>
+#include <wx/msgdlg.h>
 
 /**This function specifies histogram layout on each redraw of the GUI.
  * Tweak the layout here.
@@ -49,7 +51,9 @@ BEGIN_EVENT_TABLE(HistoDrawPane, wxPanel)
  */
 EVT_LEFT_DOWN(HistoDrawPane::leftMouseDown)
 EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
-EVT_BUTTON(RESET_BUTTON_ID, HistoDrawPane::resetAllCuts) //TODO magic number
+EVT_BUTTON(RESET_BUTTON_ID, HistoDrawPane::resetAllCuts)
+EVT_BUTTON(SAVE_BUTTON_ID, HistoDrawPane::saveCuts)
+EVT_BUTTON(LOAD_BUTTON_ID, HistoDrawPane::loadCuts)
 
 // catch paint events
 EVT_PAINT(HistoDrawPane::paintEvent)
@@ -72,7 +76,12 @@ HistoDrawPane::HistoDrawPane(wxFrame* parent) :
 		wxPanel(parent), hc("config.json") //, myHist(100,0,300),myHist1(100,-100,100), myHist2(100,0,100),  myHist3(100,0,100)
 {
 	resetButton = new wxButton(this, RESET_BUTTON_ID, wxT("Reset"),
-			wxPoint(5, 5), wxDefaultSize, 0); // TODO liczba
+			wxPoint(5, 5), wxDefaultSize, 0);
+	saveButton = new wxButton(this, SAVE_BUTTON_ID, wxT("Save"),
+			wxPoint(100, 5), wxDefaultSize, 0); // TODO set proper position coordinates
+	loadButton = new wxButton(this, LOAD_BUTTON_ID, wxT("Load"),
+			wxPoint(200, 5), wxDefaultSize, 0);
+
 	if (hc.good) {
 		histovec = hc.buildGuiHistos();
 		hc.createLogicalHistos();
@@ -257,3 +266,69 @@ void HistoDrawPane::resetAllCuts(wxCommandEvent& event) {
 	}
 	Refresh();
 }
+
+void HistoDrawPane::saveCuts(wxCommandEvent& event) {
+	// Save dialog data
+    const wxString& message = wxFileSelectorPromptStr;
+    const wxString& defaultDir = wxEmptyString;
+    const wxString& defaultFile = wxEmptyString;
+    const wxString& wildCard = wxFileSelectorDefaultWildcardStr;
+    long style = wxFD_SAVE;
+    const wxPoint& pos = wxDefaultPosition;
+    const wxSize& sz = wxDefaultSize;
+    const wxString& name = wxFileDialogNameStr;
+
+	wxFileDialog * saveFileDialog = new wxFileDialog(this, message,
+			defaultDir, defaultFile, wildCard, style, pos, sz, name);
+
+	int status = saveFileDialog->ShowModal();
+
+	string path;
+	if (status == wxID_OK) {
+		path = saveFileDialog->GetPath().ToAscii();
+	} else if (status == wxID_CANCEL) {
+		return;
+	}
+	ofstream fileStream(path);
+	ostringstream stringStream;
+
+	stringStream << histovec.size() << endl;
+	for (int i = 0; i < histovec.size(); ++i) {
+		//TODO hack
+		int cutHigh = histovec[i].histo.cutHigh;
+		if (!histovec[i].histo.cutHigh) {
+			cutHigh = histovec[i].histo.bins->size();
+		}
+		stringStream << histovec[i].histo.cutLow << " "
+				<< cutHigh << endl;
+	}
+	fileStream << stringStream.str();
+	fileStream.close();
+}
+
+void HistoDrawPane::loadCuts(wxCommandEvent& event) {
+	wxString fileName;
+	wxFileDialog * openFileDialog = new wxFileDialog(this);
+
+	if (openFileDialog->ShowModal() == wxID_OK) {
+		fileName = openFileDialog->GetPath();
+		// TODO check if file has right extension, eg. *.ser
+		ifstream infile(fileName.ToAscii());
+		int histNum, cutLow, cutHigh;
+		if (!(infile >> histNum)) {
+			wxMessageBox(wxT("The file couldn't be loaded."), wxT("Load failure"), wxICON_ERROR);
+			return;
+		}
+		for (int i = 0; i < histNum; ++i) {
+			if (infile >> cutLow >> cutHigh) {
+				histovec[i].histo.setCutLow(cutLow);
+				histovec[i].histo.setCutHigh(cutHigh);
+			} else {
+				wxMessageBox(wxT("The file is too short."), wxT("Load failure"), wxICON_ERROR);
+				return;
+			}
+		}
+		Refresh();
+	}
+}
+

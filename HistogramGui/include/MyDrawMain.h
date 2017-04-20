@@ -8,6 +8,13 @@
 #ifndef MYDRAWMAIN_H
 #define MYDRAWMAIN_H
 
+#define RESET_BUTTON_ID 1234567
+#define SAVE_BUTTON_ID 1234566
+#define LOAD_BUTTON_ID 1234565
+#define LEFT_BUTTON_DOWN true
+#define RIGHT_BUTTON_DOWN false
+
+
 //(Headers(MyDrawFrame)
 #include <wx/menu.h>
 #include <wx/statusbr.h>
@@ -27,8 +34,10 @@ class HistoDrawPane: public wxPanel {
 	int old_width, old_height;
 
 public:
-	// Reset cuts button
+	// Buttons
 	wxButton * resetButton;
+	wxButton * saveButton;
+	wxButton * loadButton;
 
 	///Container for histoCreators
 	HistoContainer hc;
@@ -45,10 +54,16 @@ public:
 	void drawHisto(wxDC& dc, MyHistogramWrapper & h, wxPoint from,
 			wxSize hsize);
 	void drawTics(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
+
+	// Mouse events
 	void mouseDown(wxMouseEvent& event, bool isLeftMouseDown); // TODO make private or sth
 	void leftMouseDown(wxMouseEvent& event);
 	void rightMouseDown(wxMouseEvent& event);
+
+	// Button events
 	void resetAllCuts(wxCommandEvent& event);
+	void saveCuts(wxCommandEvent& event);
+	void loadCuts(wxCommandEvent& event);
 
 	void setHistSizes();
 	~HistoDrawPane() {

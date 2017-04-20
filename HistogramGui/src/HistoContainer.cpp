@@ -31,7 +31,7 @@ HistoContainer::HistoContainer(string json_path) {
 		good = true;
 		read_json(json_path, pt);
 		for (auto & p : pt) {
-			cout << "boo";
+			cout << "Sernik";
 			if (p.first.substr(0, 3) == "dat")
 				creators.push_back(new HistoCreator(p.second));
 		}
