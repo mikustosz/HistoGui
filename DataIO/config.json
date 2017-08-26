@@ -1,44 +1,25 @@
 {
 "dat_file1":{
    "options":{
-   	"numOfEvents":50500,
-   	"treeName":"TestTree",
-   	"branchName":"entry",
-   	"myDataFile":"bindata",
-   	"rootDataFile":"TestData.root"
+      "numOfEvents":17335,
+      "treeName":"Summary/tree",
+      "branchName":"entry",
+      "myDataFile":"bindata_4Mu",
+      "rootDataFile":"RootAnalysis_Analysis4Mu_Data.root"
    },
    "histos":[
-   		{
-   			"name":"mass",
-   			"bins":256,
-   			"min":0,
-   			"max":256
-   		},
-   		{
-   			"name":"ptL1",
-   			"bins":256,
-   			"min":0,
-   			"max":256
-   		},
-   		{
-   			"name":"ptL2",
-   			"bins":256,
-   			"min":0,
-   			"max":256
-   		},
-   		{
-   			"name":"isoL1",
-   			"bins":256,
-   			"min":0,
-   			"max":256
-   		},
-   		{
-   			"name":"isoL2",
-   			"bins":256,
-   			"min":0,
-   			"max":256
-   		}
-   		
+         {
+            "name":"mass4Mu",
+            "bins":128,
+            "min":0,
+            "max":400
+         },
+         {
+            "name":"massZ1",
+            "bins":128,
+            "min":0,
+            "max":160
+         }
    ]
   }
 }

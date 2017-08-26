@@ -7,6 +7,10 @@
 
 #ifndef INCLUDE_HISTOCONFIG_H_
 #define INCLUDE_HISTOCONFIG_H_
+
+#define OUT_OF_BOUND_LEFT -1
+#define OUT_OF_BOUND_RIGHT -2
+
 #include <string>
 #include <vector>
 #include <cmath>
@@ -36,7 +40,7 @@ public:
 	vector<MyHisto> vec;
 	HistogramConfig(string path_to_json);
 	HistogramConfig(ptree pt);
-	unsigned int getBin(int histo, float value);
+	int getBin(int histo, float value);
 	int noOfBytes(int i);
 };
 /// Returns how much bytes do we need to save given unsigned int

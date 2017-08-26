@@ -59,27 +59,28 @@ HistogramConfig::HistogramConfig(ptree pt) {
 		int bytes = noOfBytes(bins);
 		multiplexedByteLenOfEvent += bytes;
 		vec.push_back(
-				{ h.second.get < string > ("name"), bins, bytes, h.second.get<
-						float>("min"), h.second.get<float>("max") });
+				{ h.second.get < string > ("name"), bins, bytes, h.second.get
+			<float>("min"), h.second.get<float>("max") });
 	}
 	numOfHistos = vec.size();
 }
 /*
  * For a given value retrieve a bin number it should be added to, for a given histogram.
+ * If the element is out of range return OUT_OF_BOUND_LEFT or OUT_OF_BOUND_RIGHT
  */
-unsigned int HistogramConfig::getBin(int histo, float value) {
+int HistogramConfig::getBin(int histo, float value) {
 
 	long int b = (long int) ((value - vec[histo].min)
 			/ (vec[histo].max - vec[histo].min) * vec[histo].bins);
 	if (b < 0) {
 		b = 0;
-		cerr << "\n" << value << " out of range [" << vec[histo].min << ", "
+		clog << "\n" << value << " out of range [" << vec[histo].min << ", "
 				<< vec[histo].max << "]";
 	} else if (b >= vec[histo].bins) {
 		b = vec[histo].bins;
-		cerr << "\n" << value << " out of range [" << vec[histo].min << ", "
+		clog << "\n" << value << " out of range [" << vec[histo].min << ", "
 				<< vec[histo].max << "]";
 	}
-	return (unsigned int) b;
+	return b;
 }
 

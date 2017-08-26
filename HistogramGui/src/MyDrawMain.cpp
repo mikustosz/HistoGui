@@ -30,8 +30,8 @@ void HistoDrawPane::setHistSizes() {
 	int sizex = old_width / cols - ofs * 2, sizey = old_height / rows - ofs * 2;
 	wxSize mySize(sizex, sizey);
 	for (int i = 0; i < rows; ++i)
-		for (int j = 0; j < cols && i * rows + j < histovec.size(); ++j) {
-			histovec[i * rows + j].r = wxRect(
+		for (int j = 0; j < cols && i * cols + j < histovec.size(); ++j) {
+			histovec[i * cols + j].r = wxRect(
 					wxPoint((1 + 2 * j) * ofs + j * sizex,
 							10 + (1 + 2 * i) * ofs + i * sizey), mySize);
 		}
@@ -54,6 +54,8 @@ EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
 EVT_BUTTON(RESET_BUTTON_ID, HistoDrawPane::resetAllCuts)
 EVT_BUTTON(SAVE_BUTTON_ID, HistoDrawPane::saveCuts)
 EVT_BUTTON(LOAD_BUTTON_ID, HistoDrawPane::loadCuts)
+EVT_BUTTON(INCREASE_SCALE_BUTTON_ID, HistoDrawPane::increaseScale)
+EVT_BUTTON(DECREASE_SCALE_BUTTON_ID, HistoDrawPane::decreaseScale)
 
 // catch paint events
 EVT_PAINT(HistoDrawPane::paintEvent)
@@ -81,6 +83,10 @@ HistoDrawPane::HistoDrawPane(wxFrame* parent) :
 			wxPoint(100, 5), wxDefaultSize, 0); // TODO set proper position coordinates
 	loadButton = new wxButton(this, LOAD_BUTTON_ID, wxT("Load"),
 			wxPoint(200, 5), wxDefaultSize, 0);
+	loadButton = new wxButton(this, INCREASE_SCALE_BUTTON_ID, wxT("+"),
+			wxPoint(300, 5), wxDefaultSize, 0);
+	loadButton = new wxButton(this, DECREASE_SCALE_BUTTON_ID, wxT("-"),
+			wxPoint(400, 5), wxDefaultSize, 0);
 
 	if (hc.good) {
 		histovec = hc.buildGuiHistos();
@@ -131,6 +137,7 @@ void HistoDrawPane::render(wxDC& dc) {
 	int ofs = min(width, height) / 20;
 	int sizex = width / 2 - ofs * 3 / 2, sizey = height / 2 - ofs * 3 / 2;
 	wxSize mySize(sizex, sizey);
+	//cout << "histovec.size(): " << histovec.size() << endl; // TODO
 	for (int a = 0; a < histovec.size(); ++a) {
 		drawHisto(dc, histovec[a].histo, histovec[a].r.GetLeftTop(),
 				histovec[a].r.GetSize());
@@ -153,18 +160,22 @@ void HistoDrawPane::drawHisto(wxDC& dc, MyHistogramWrapper & hist, wxPoint from,
 	wxRect r(from.x + hsize.x / 2 - 50, from.y + hsize.y / 12 - 50, 100, 100);
 
 	dc.DrawLabel(mstr, r, wxALIGN_CENTER);
-	//dc.DrawText(mstr,from.x + hsize.x/2, from.y + hsize.y/8);
 
 	drawTics(dc, hist, from, hsize);
 
+	// Draw histogram points
 	for (int i = 0; i < hist.bins->size(); ++i) {
 		int x = from.x + i * hsize.x / hist.bins->size();
-		int y = int(from.y + (1 - hist.getNormalizedBin(i)) * hsize.y);
-
-		//dc.DrawPoint( wxPoint(x,y));
-		dc.DrawCircle(wxPoint(x, y), 1);
+		int y = int(from.y + (1 - hist.getNormalizedBin(i)*histoSizeModifier) * hsize.y);
+		if (y <= from.y) { // If the height of the histogram is out of scale, mark the dot with different color
+			y = int (from.y);
+			dc.SetPen(wxPen( wxColor(255, 0, 0), 2));
+		}
+		if (hist.getNormalizedBin(i)) { // draw only if value in this bin is higher than 0
+			dc.DrawCircle(wxPoint(x, y), 2);
+		}
+		dc.SetPen(wxPen( wxColor(0, 0, 0), 2));
 	}
-
 }
 /**
  * Function triggered by wxWidgets when the window is resized. We trigger setHistSize in render()
@@ -203,7 +214,7 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from,
 			j += hist.numbered_tics_spacing) {
 		wxRect r1(from.x - 20 - fontSize * 2.5, from.y + hsize.y * (1 - j) - 10,
 				40, 20);
-		string s2 = Utils::itos<double>(hist.hmin + (hist.hmax - hist.hmin) * j,
+		string s2 = Utils::itos<double>(hist.hmin + (hist.hmax - hist.hmin)*j/histoSizeModifier,
 				2);
 		dc.DrawLabel(wxString(s2.c_str(), wxConvUTF8), r1, wxALIGN_CENTER);
 	}
@@ -243,7 +254,7 @@ void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 		if (histovec[a].histo.cutHigh && cut >= histovec[a].histo.cutHigh)
 			return;
 		histovec[a].histo.setCutLow(cut);
-	} else {
+	} else { // isRightMouseDown
 		if (cut <= histovec[a].histo.cutLow)
 			return;
 		histovec[a].histo.setCutHigh(cut);
@@ -264,6 +275,7 @@ void HistoDrawPane::resetAllCuts(wxCommandEvent& event) {
 		histovec[i].histo.setCutLow(0);
 		histovec[i].histo.setCutHigh(histovec[i].histo.bins->size());
 	}
+	histoSizeModifier = 0.9;
 	Refresh();
 }
 
@@ -330,5 +342,13 @@ void HistoDrawPane::loadCuts(wxCommandEvent& event) {
 		}
 		Refresh();
 	}
+}
+void HistoDrawPane::increaseScale(wxCommandEvent& event) {
+	histoSizeModifier *= 1.15;
+	Refresh();
+}
+void HistoDrawPane::decreaseScale(wxCommandEvent& event) {
+	histoSizeModifier *= 0.85;
+	Refresh();
 }
 

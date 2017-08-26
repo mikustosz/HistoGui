@@ -18,7 +18,7 @@
 #include <fstream>
 
 #include <boost/property_tree/ptree.hpp>
-#include<boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace boost::property_tree;
 using namespace std;
@@ -27,7 +27,7 @@ int main() {
 	read_json("config.json", pt);
 	for (auto & p : pt) {
 
-		cout << "\n" << p.first;
+		cout << "p.first (" << p.first << ")\n";//TODO
 		HistoCreator data(p.second);
 		data.runTests();
 	}

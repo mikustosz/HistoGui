@@ -11,6 +11,8 @@
 #define RESET_BUTTON_ID 1234567
 #define SAVE_BUTTON_ID 1234566
 #define LOAD_BUTTON_ID 1234565
+#define INCREASE_SCALE_BUTTON_ID 1234564
+#define DECREASE_SCALE_BUTTON_ID 1234563
 #define LEFT_BUTTON_DOWN true
 #define RIGHT_BUTTON_DOWN false
 
@@ -34,10 +36,14 @@ class HistoDrawPane: public wxPanel {
 	int old_width, old_height;
 
 public:
+	float histoSizeModifier = 0.9;
+
 	// Buttons
 	wxButton * resetButton;
 	wxButton * saveButton;
 	wxButton * loadButton;
+	wxButton * increaseScaleButton;
+	wxButton * decreaseScaleButton;;
 
 	///Container for histoCreators
 	HistoContainer hc;
@@ -64,10 +70,13 @@ public:
 	void resetAllCuts(wxCommandEvent& event);
 	void saveCuts(wxCommandEvent& event);
 	void loadCuts(wxCommandEvent& event);
+	void increaseScale(wxCommandEvent& event);
+	void decreaseScale(wxCommandEvent& event);
 
 	void setHistSizes();
 	~HistoDrawPane() {
 	}
+
 	// some useful events
 	/*
 	 void mouseMoved(wxMouseEvent& event);

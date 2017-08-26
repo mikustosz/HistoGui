@@ -22,13 +22,12 @@ IMPLEMENT_APP(MyHistoApp)
 
 bool MyHistoApp::OnInit() {
 	wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-	frame = new wxFrame((wxFrame *) NULL, -1, wxT("Hello wxDC"),
-			wxPoint(50, 50), wxSize(800, 600));
+	frame = new wxFrame((wxFrame *) NULL, -1, wxT("CMS lab"),
+			wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE|wxMAXIMIZE);
 
 	drawPane = new HistoDrawPane((wxFrame*) frame);
 
 	sizer->Add(drawPane, 1, wxEXPAND);
-
 	frame->SetSizer(sizer);
 	frame->SetAutoLayout(true);
 
