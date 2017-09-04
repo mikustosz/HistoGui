@@ -27,6 +27,7 @@ public:
 	string title;
 	///pointer to vector owned by creator
 	vector<unsigned int> * bins;
+	int eventNum;
 	HistoCreator * creator;
 	///id of a histogram in creator
 	int histoId;

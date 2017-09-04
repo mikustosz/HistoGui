@@ -43,12 +43,12 @@ public:
 	wxButton * saveButton;
 	wxButton * loadButton;
 	wxButton * increaseScaleButton;
-	wxButton * decreaseScaleButton;;
+	wxButton * decreaseScaleButton;
 
 	///Container for histoCreators
 	HistoContainer hc;
 	/// Histogram wrappers with is position and dimensions
-	std::vector<HistoGraph> histovec;
+	std::vector<std::vector<HistoGraph> > histovec;
 	///Generic constructor
 	HistoDrawPane(wxFrame* parent);
 
@@ -57,8 +57,8 @@ public:
 	void paintNow();
 
 	void render(wxDC& dc);
-	void drawHisto(wxDC& dc, MyHistogramWrapper & h, wxPoint from,
-			wxSize hsize);
+	void drawHisto(wxDC& dc, MyHistogramWrapper & h, MyHistogramWrapper & hBcgr, bool isBcgr,
+			wxPoint from, wxSize hsize);
 	void drawTics(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
 
 	// Mouse events
@@ -72,6 +72,9 @@ public:
 	void loadCuts(wxCommandEvent& event);
 	void increaseScale(wxCommandEvent& event);
 	void decreaseScale(wxCommandEvent& event);
+	///TODO
+	void OnExit(wxCommandEvent& event);
+	///
 
 	void setHistSizes();
 	~HistoDrawPane() {

@@ -142,19 +142,19 @@ using namespace std;
 /**
  * Unused, takes configuration from json at _configPath.
  */
-HistoCreator::HistoCreator(string _configPath) :
-		configPath(_configPath), hc(_configPath) {
-	for (int i = 0; i < hc.vec.size(); ++i) {
-		histos.push_back(vector<unsigned int>(hc.vec[i].bins));
-		cutsLow.push_back(0);
-		cutsHigh.push_back(hc.vec[i].bins);
-	}
-}
-/**
- * Constructor takes configuration from boost::program_options ptree, loaded from json_config
- */
-HistoCreator::HistoCreator(ptree pt) :
-		hc(pt) {
+//HistoCreator::HistoCreator(string _configPath) :
+//		configPath(_configPath), hc(_configPath) {
+//	for (int i = 0; i < hc.vec.size(); ++i) {
+//		histos.push_back(vector<unsigned int>(hc.vec[i].bins));
+//		cutsLow.push_back(0);
+//		cutsHigh.push_back(hc.vec[i].bins);
+//	}
+//}
+
+///**
+// * Constructor takes configuration from boost::program_options ptree, loaded from json_config
+// */
+HistoCreator::HistoCreator(ptree pt) : hc(pt) {
 
 	for (int i = 0; i < hc.vec.size(); ++i) {
 		histos.push_back(vector<unsigned int>(hc.vec[i].bins));
@@ -162,10 +162,12 @@ HistoCreator::HistoCreator(ptree pt) :
 		cutsHigh.push_back(hc.vec[i].bins);
 	}
 }
+
 /**
  * Loads ROOT file from hc.rootDataFile path and saves multiplexed binary file to hc.myDataFile path/
  */
 void HistoCreator::processTree() {
+	//cout << "sizeof(char*): "<< sizeof(char*) << endl;
 	TFile * file = new TFile(hc.rootDataFile.c_str());
 	TTree* tree = (TTree*) file->Get(hc.treeName.c_str());
 	fstream file1(hc.myDataFile.c_str(), fstream::out | fstream::binary);
@@ -178,9 +180,25 @@ void HistoCreator::processTree() {
 		tree->GetEntry(i);
 		for (int k = 0; k < hc.vec.size(); ++k) {
 			unsigned int j = hc.getBin(k, val[k]);
+			if (j == UINT_MAX) {
+				//cout << " processTree(): k: " << k << " j: " << j << endl;
+			}
+			//cout << "write j: " << j << endl;
+
 			file1.write((char*) &j, hc.vec[k].bytes); // TODO tu nie bangla
 		}
 	}
+	////
+//	fstream file2("serniczekwywalTODO", fstream::out | fstream::binary);
+//	unsigned int jj = 255;
+//	file2.write((char*) &jj, hc.vec[0].bytes);
+//	jj = 256;
+//	file2.write((char*) &jj, hc.vec[0].bytes);
+//	jj = 257;
+//	file2.write((char*) &jj, hc.vec[0].bytes);
+//	file2.close();
+	////
+
 	file1.close();
 
 }
@@ -192,15 +210,22 @@ void HistoCreator::createHistos() {
 	writeZeros();
 	IDataSource *ids = PreloadContainer::get().getDataSource(
 			hc.myDataFile.c_str());
+	// table of an event for each histogram
 	unsigned int val[hc.vec.size()];
 	for (int i = 0; i < hc.numOfEvents; ++i) {
 		int l = 0;
 		for (int k = 0; k < hc.vec.size(); ++k) {
 			val[k] = ids->read(hc.vec[k].bytes); // TODO tu nie bangla
+//			cout << "READ READ READ READ val["<<k<<"]: " << val[k] << endl;
+//			cout << "ddcutsLow[k]: " << cutsLow[k] << endl;
+//			cout << "ddcutsHigh[k]: " << cutsHigh[k] << endl;
 			if (val[k] < cutsLow[k] or val[k] >= cutsHigh[k])
 				l = hc.vec.size();
 		}
+//		cout << "DUUUUUUUUUPA0 hc.vec.size(): " << hc.vec.size() << endl;
+//		cout << "DUUUUUUUUUPA0 l: " << l << endl;
 		for (; l < hc.vec.size(); ++l) {
+			//cout << "DUUUUUUUUUPA histos["<<l<<"]["<<val[l]<<"]: " << histos[l][val[l]] << endl;
 			histos[l][val[l]]++;
 		}
 	}
@@ -249,9 +274,27 @@ void HistoCreator::runTests() {
 	tree->SetBranchAddress(hc.branchName.c_str(), val);
 	for (int i = 0; i < hc.numOfEvents; ++i) {
 		tree->GetEntry(i);
+		bool isOk = true;
 		for (int k = 0; k < hc.vec.size(); ++k) {
+			unsigned int bin = hc.getBin(k, val[k]);
+			if (bin < cutsLow[k] or bin >= cutsHigh[k]) {
+//				cout << "bin: " << bin << endl;
+//				cout << "cutsLow[k]: " << cutsLow[k] << endl;
+//				cout << "cutsHigh[k]: " << cutsHigh[k] << endl;
+				isOk = false;
+			}
+		}
+		// if one event is selected out from any histogram, don't add this event to any histogram
+		if (!isOk)
+			continue;
+		for (int k = 0; k < hc.vec.size(); ++k) {
+			//cout << "val["<<k<<"]: " << val[k] << endl;
 			unsigned int j = hc.getBin(k, val[k]);
-			histos_copy[k][j]++;
+			if (j != UINT_MAX) {
+				histos_copy[k][j]++;
+			} else {
+				//cout << " j == UINT_MAX, k: " << k << " j: "<<j<<endl;
+			}
 		}
 	}
 	processTree();
@@ -261,8 +304,11 @@ void HistoCreator::runTests() {
 		for (int j = 0; j < histos[i].size(); ++j) {
 			errors += histos[i][j] != histos_copy[i][j];
 			if (histos[i][j] != histos_copy[i][j]) {
-				cout << "histos["<<i<<"]["<<j<<"] != histos_copy["<<i<<"]["<<j<<"]: "
-						<<histos[i][j]<<"!="<<histos_copy[i][j]<<endl;//TODO
+//				cout << "histos["<<i<<"]["<<j<<"] != histos_copy["<<i<<"]["<<j<<"]: "
+//						<<histos[i][j]<<"!="<<histos_copy[i][j]<<endl;//TODO
+			} else {
+//				cout << "histos["<<i<<"]["<<j<<"] == histos_copy["<<i<<"]["<<j<<"]: "
+//						<<histos[i][j]<<"=="<<histos_copy[i][j]<<endl;//TODO
 			}
 		}
 	cout << "Errors: " << errors << "." << endl;
@@ -271,7 +317,6 @@ void HistoCreator::runTests() {
 	else
 		cerr << "What a terrible failure" << endl;
 
-	// TODO wywal
-//	makeTestTree();
+//	makeTestTree();// TODO wywal
 }
 

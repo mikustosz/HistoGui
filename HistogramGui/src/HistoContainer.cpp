@@ -31,27 +31,35 @@ HistoContainer::HistoContainer(string json_path) {
 		good = true;
 		read_json(json_path, pt);
 		for (auto & p : pt) {
-			cout << "Sernik";
 			if (p.first.substr(0, 3) == "dat")
 				creators.push_back(new HistoCreator(p.second));
 		}
 	}
 }
 
-vector<HistoGraph> HistoContainer::buildGuiHistos() {
-	vector<HistoGraph> histos;
+vector <vector<HistoGraph> > HistoContainer::buildGuiHistos() {
+	vector <vector<HistoGraph> > histos(2);
+	int cNum = 0;
 	for (auto c : creators) {
+		if (cNum > 1) {
+			cout << "Wrong number of files, there should only be 1 or 2\n";
+			exit(1);
+		}
+//		cout << "CREATOR!\n";//TODO
 		auto it = c->histos.begin();
 		int i = 0;
 		for (auto &h : c->hc.vec) {
-			histos.push_back(HistoGraph(h.bins, h.min, h.max));
-			histos.back().histo.title = h.name;
-			histos.back().histo.bins = &(*it);
-			histos.back().histo.creator = &(*c);
-			histos.back().histo.histoId = i;
+			histos[cNum].push_back(HistoGraph(h.bins, h.min, h.max));
+			histos[cNum].back().histo.title = h.name;
+			histos[cNum].back().histo.bins = &(*it);
+			histos[cNum].back().histo.creator = &(*c);
+			histos[cNum].back().histo.histoId = i;
+			histos[cNum].back().histo.eventNum = h.eventNum;
+//			cout << "h.eventNum: " << h.eventNum << endl;
 			it++;
 			i++;
 		}
+		cNum++;
 	}
 
 	return histos;

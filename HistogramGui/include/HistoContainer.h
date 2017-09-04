@@ -42,7 +42,7 @@ public:
 	vector<HistoCreator*> creators;
 	;
 	///Set binding between data and GUI objects
-	vector<HistoGraph> buildGuiHistos();
+	vector <vector<HistoGraph> > buildGuiHistos();
 	/// Reset and fill bins with experimental data, loaded from file/RAM cache
 	void createLogicalHistos();
 	///Get rid of Creators

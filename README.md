@@ -19,6 +19,8 @@ export LD_LIBRARY_PATH=$ROOTSYS/lib:$PWD/lib
 TODO wywal (komenda do odpalania)
 ./ParseTree && cp ./config.json ../HistogramGui/ && cp ./bindata_4Mu ../HistogramGui/ && ../HistogramGui/myApp 
 
+TODO ŚWIEŻE
+make && cd ../HistogramGui/ && make && cd ../DataIO/ && ./ParseTree && cp ./config.json ../HistogramGui/ && cp ./bindata_4Mu ../HistogramGui/ && ../HistogramGui/myApp
 
 
 and running:

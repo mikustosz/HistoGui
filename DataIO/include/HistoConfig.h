@@ -30,15 +30,18 @@ public:
 	///length of a given event in bytes in muptiplexed data file (all entries together)
 	int multiplexedByteLenOfEvent;
 	string treeName, branchName, rootDataFile, myDataFile;
-	///Basic single histogram config aggregate, contains its name, value range, byte length (log_128(bins)).
+	// Basic single histogram config aggregate, contains its name,
+	// value range, byte length (log_128(bins)) and no. of events
 	struct MyHisto {
 		string name;
-		int bins, bytes;
+		int bins, bytes, eventNum;
 		float min, max;
+		MyHisto(string n, int bns, int bts, int en, float mn, float mx)
+		: name(n), bins(bns), bytes(bts), eventNum(en), min(mn), max(mx) {}
 	};
 	///vector of histogram config data aggregates
 	vector<MyHisto> vec;
-	HistogramConfig(string path_to_json);
+//	HistogramConfig(string path_to_json);
 	HistogramConfig(ptree pt);
 	int getBin(int histo, float value);
 	int noOfBytes(int i);
