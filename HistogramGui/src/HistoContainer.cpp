@@ -45,7 +45,6 @@ vector <vector<HistoGraph> > HistoContainer::buildGuiHistos() {
 			cout << "Wrong number of files, there should only be 1 or 2\n";
 			exit(1);
 		}
-//		cout << "CREATOR!\n";//TODO
 		auto it = c->histos.begin();
 		int i = 0;
 		for (auto &h : c->hc.vec) {
@@ -55,7 +54,6 @@ vector <vector<HistoGraph> > HistoContainer::buildGuiHistos() {
 			histos[cNum].back().histo.creator = &(*c);
 			histos[cNum].back().histo.histoId = i;
 			histos[cNum].back().histo.eventNum = h.eventNum;
-//			cout << "h.eventNum: " << h.eventNum << endl;
 			it++;
 			i++;
 		}

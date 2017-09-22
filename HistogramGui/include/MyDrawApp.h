@@ -16,7 +16,6 @@
 class MyHistoApp: public wxApp {
 	bool OnInit();
 
-	wxFrame *frame;
 	MyMenu *menu;
 	HistoDrawPane * drawPane;
 public:

@@ -54,14 +54,11 @@ EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
 //TODO right up
 
 
-EVT_BUTTON(RESET_BUTTON_ID, HistoDrawPane::resetAllCuts)
-EVT_BUTTON(SAVE_BUTTON_ID, HistoDrawPane::saveCuts)
-EVT_BUTTON(LOAD_BUTTON_ID, HistoDrawPane::loadCuts)
 EVT_BUTTON(INCREASE_SCALE_BUTTON_ID, HistoDrawPane::increaseScale)
 EVT_BUTTON(DECREASE_SCALE_BUTTON_ID, HistoDrawPane::decreaseScale)
 
 /// TODO
-//EVT_MENU(wxID_EXIT, HistoDrawPane::OnExit)
+EVT_MENU(wxID_EXIT, HistoDrawPane::OnExit)
 ///
 
 // catch paint events
@@ -82,16 +79,18 @@ END_EVENT_TABLE()
  */
 
 HistoDrawPane::HistoDrawPane(wxFrame* parent) : wxPanel(parent), hc("config.json") {
-	resetButton = new wxButton(this, RESET_BUTTON_ID, wxT("Reset"),
-			wxPoint(5, 5), wxDefaultSize, 0);
-	saveButton = new wxButton(this, SAVE_BUTTON_ID, wxT("Save"),
-			wxPoint(100, 5), wxDefaultSize, 0); // TODO set proper position coordinates
-	loadButton = new wxButton(this, LOAD_BUTTON_ID, wxT("Load"),
-			wxPoint(200, 5), wxDefaultSize, 0);
 	loadButton = new wxButton(this, INCREASE_SCALE_BUTTON_ID, wxT("+"),
 			wxPoint(300, 5), wxDefaultSize, 0);
 	loadButton = new wxButton(this, DECREASE_SCALE_BUTTON_ID, wxT("-"),
 			wxPoint (400, 5), wxDefaultSize, 0);
+
+	// Binding menu events
+	function<void (wxCommandEvent &)> saveHandler (bind(&HistoDrawPane::OnSave, this, _1));
+	function<void (wxCommandEvent &)> loadHandler (bind(&HistoDrawPane::OnLoad, this, _1));
+	function<void (wxCommandEvent &)> resetHandler(bind(&HistoDrawPane::OnReset, this, _1));
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, saveHandler, wxID_SAVE);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, loadHandler, wxID_OPEN);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, resetHandler, wxID_REVERT);
 
 	if (hc.good) {
 		histovec = hc.buildGuiHistos();
@@ -213,19 +212,17 @@ void HistoDrawPane::drawHisto(wxDC& dc, MyHistogramWrapper & hist, MyHistogramWr
 
 			if (hists[k]->getNormalizedBin(i) > 0) {
 				// Horizontal bin line
-				dc.DrawLine(wxPoint(x,y), wxPoint(x+binLength+1,y));
+				dc.DrawLine(wxPoint(x,y), wxPoint(x+binLength,y));
 				dc.SetPen(wxPen(colours[k], 1));
 				int nextY = from.y + hsize.y;
 
 				// Vertical lines
 				if (i == 0 || hists[k]->getNormalizedBin(i-1) == 0) {
 					// left bin side
-					dc.DrawLine(wxPoint(x,y), wxPoint(x,from.y + hsize.y));
+					dc.DrawLine(wxPoint(x,y), wxPoint(x,from.y + hsize.y-1));
 				}
 				if (i < hists[k]->bins->size()-1) {
 					nextY = max(from.y,int(from.y + (1 - hists[k]->getNormalizedBin(i+1)*histoSizeModifier*histModif) * hsize.y));
-					nextY += y < nextY;
-					nextY -= y > nextY;
 				}
 				// right bin side
 				dc.DrawLine(wxPoint(x+binLength,y), wxPoint(x+binLength,nextY));
@@ -339,59 +336,17 @@ void HistoDrawPane::leftMouseDown(wxMouseEvent& event) {
 void HistoDrawPane::rightMouseDown(wxMouseEvent& event) {
 	this->mouseDown(event, RIGHT_BUTTON_DOWN);
 }
-void HistoDrawPane::resetAllCuts(wxCommandEvent& event) {
-	for (int g = 0; g < histovec.size(); ++g) {
-		for (int i = 0; i < histovec[g].size(); ++i) {
-			histovec[g][i].histo.setCutLow(0);
-			histovec[g][i].histo.setCutHigh(histovec[g][i].histo.bins->size());
-		}
+void HistoDrawPane::OnReset(wxCommandEvent& event) {
+	for (int i = 0; i < histovec[0].size(); ++i) {
+		histovec[0][i].histo.setCutLow(0);
+		histovec[0][i].histo.setCutHigh(histovec[0][i].histo.bins->size());
 	}
 	histoSizeModifier = 0.9;
 	Refresh();
 }
 
 // TODO bcgr
-void HistoDrawPane::saveCuts(wxCommandEvent& event) {
-	// Save dialog data
-    const wxString& message = wxFileSelectorPromptStr;
-    const wxString& defaultDir = wxEmptyString;
-    const wxString& defaultFile = wxEmptyString;
-    const wxString& wildCard = wxFileSelectorDefaultWildcardStr;
-    long style = wxFD_SAVE;
-    const wxPoint& pos = wxDefaultPosition;
-    const wxSize& sz = wxDefaultSize;
-    const wxString& name = wxFileDialogNameStr;
-
-	wxFileDialog * saveFileDialog = new wxFileDialog(this, message,
-			defaultDir, defaultFile, wildCard, style, pos, sz, name);
-
-	int status = saveFileDialog->ShowModal();
-
-	string path;
-	if (status == wxID_OK) {
-		path = saveFileDialog->GetPath().ToAscii();
-	} else if (status == wxID_CANCEL) {
-		return;
-	}
-	ofstream fileStream(path);
-	ostringstream stringStream;
-
-	stringStream << histovec[0].size() << endl;
-	for (int i = 0; i < histovec[0].size(); ++i) {
-		//TODO hack
-		int cutHigh = histovec[0][i].histo.cutHigh;
-		if (!histovec[0][i].histo.cutHigh) {
-			cutHigh = histovec[0][i].histo.bins->size();
-		}
-		stringStream << histovec[0][i].histo.cutLow << " "
-				<< cutHigh << endl;
-	}
-	fileStream << stringStream.str();
-	fileStream.close();
-}
-
-// TODO bcgr
-void HistoDrawPane::loadCuts(wxCommandEvent& event) {
+void HistoDrawPane::OnLoad(wxCommandEvent& event) {
 	wxString fileName;
 	wxFileDialog * openFileDialog = new wxFileDialog(this);
 
@@ -424,8 +379,48 @@ void HistoDrawPane::decreaseScale(wxCommandEvent& event) {
 	histoSizeModifier *= 0.85;
 	Refresh();
 }
-void HistoDrawPane::OnExit(wxCommandEvent& event) {
-	histoSizeModifier *= 0.85;
-	Refresh();
+
+void HistoDrawPane::OnSave(wxCommandEvent& event) {
+	// Save dialog
+    const wxString& message = wxFileSelectorPromptStr;
+    const wxString& defaultDir = wxEmptyString;
+    const wxString& defaultFile = wxEmptyString;
+    const wxString& wildCard = wxFileSelectorDefaultWildcardStr;
+    long style = wxFD_SAVE;
+    const wxPoint& pos = wxDefaultPosition;
+    const wxSize& sz = wxDefaultSize;
+    const wxString& name = wxFileDialogNameStr;
+
+	wxFileDialog * saveFileDialog = new wxFileDialog(this, message,
+			defaultDir, defaultFile, wildCard, style, pos, sz, name);
+
+	int status = saveFileDialog->ShowModal();
+
+	string path;
+	if (status == wxID_OK) {
+		path = saveFileDialog->GetPath().ToAscii();
+	} else if (status == wxID_CANCEL) {
+		return;
+	}
+
+	// Create file
+	ofstream fileStream(path);
+	ostringstream stringStream;
+
+	stringStream << histovec[0].size() << endl;
+	for (int i = 0; i < histovec[0].size(); ++i) {
+		//TODO hack
+		int cutHigh = histovec[0][i].histo.cutHigh;
+		if (!histovec[0][i].histo.cutHigh) {
+			cutHigh = histovec[0][i].histo.bins->size();
+		}
+		stringStream << histovec[0][i].histo.cutLow << " "
+				<< cutHigh << endl;
+	}
+	fileStream << stringStream.str();
+	fileStream.close();
 }
 
+void HistoDrawPane::OnExit(wxCommandEvent& event) {
+	Close(true);
+}

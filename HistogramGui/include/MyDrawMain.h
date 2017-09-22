@@ -8,11 +8,11 @@
 #ifndef MYDRAWMAIN_H
 #define MYDRAWMAIN_H
 
-#define RESET_BUTTON_ID 1234567
-#define SAVE_BUTTON_ID 1234566
-#define LOAD_BUTTON_ID 1234565
-#define INCREASE_SCALE_BUTTON_ID 1234564
-#define DECREASE_SCALE_BUTTON_ID 1234563
+#define RESET_BUTTON_ID 100
+#define SAVE_BUTTON_ID 101
+#define LOAD_BUTTON_ID 102
+#define INCREASE_SCALE_BUTTON_ID 103
+#define DECREASE_SCALE_BUTTON_ID 104
 #define LEFT_BUTTON_DOWN true
 #define RIGHT_BUTTON_DOWN false
 
@@ -66,15 +66,15 @@ public:
 	void leftMouseDown(wxMouseEvent& event);
 	void rightMouseDown(wxMouseEvent& event);
 
-	// Button events
-	void resetAllCuts(wxCommandEvent& event);
-	void saveCuts(wxCommandEvent& event);
-	void loadCuts(wxCommandEvent& event);
+	// Button events TODO wywal
 	void increaseScale(wxCommandEvent& event);
 	void decreaseScale(wxCommandEvent& event);
-	///TODO
+
+	// Menu events
+	void OnSave(wxCommandEvent& event);
+	void OnLoad(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
-	///
+	void OnReset(wxCommandEvent& event);
 
 	void setHistSizes();
 	~HistoDrawPane() {
