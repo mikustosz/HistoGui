@@ -9,8 +9,8 @@
 #define MYDRAWMAIN_H
 
 #define RESET_BUTTON_ID 100
-#define SAVE_BUTTON_ID 101
-#define LOAD_BUTTON_ID 102
+#define NEXT_BUTTON_ID 101
+#define BACK_BUTTON_ID 102
 #define INCREASE_SCALE_BUTTON_ID 103
 #define DECREASE_SCALE_BUTTON_ID 104
 #define LEFT_BUTTON_DOWN true
@@ -25,25 +25,31 @@
 #include "wx/wx.h"
 #include "wx/sizer.h"
 #include <vector>
+#include <map>
 
 #include "HistoContainer.h"
 #include "MyHistogramWrapper.h"
 
 using namespace std;
 
-///generic wxWidgets panel for drawing, and user interaction
+// Generic wxWidgets panel for drawing, and user interaction
 class HistoDrawPane: public wxPanel {
 	int old_width, old_height;
 
 public:
+	int getMaxColNr();
+	int getMaxRowNr();
+	bool histoVisible(int idx);
+
+	// Percentage of height reserved for histogram data (default - 90% from down to up)
 	float histoSizeModifier = 0.9;
 
+	// For histograms pagination
+	int pageNr = 1;
+
 	// Buttons
-	wxButton * resetButton;
-	wxButton * saveButton;
-	wxButton * loadButton;
-	wxButton * increaseScaleButton;
-	wxButton * decreaseScaleButton;
+	wxButton * nextButton;
+	wxButton * backButton;
 
 	///Container for histoCreators
 	HistoContainer hc;
@@ -62,13 +68,15 @@ public:
 	void drawTics(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
 
 	// Mouse events
-	void mouseDown(wxMouseEvent& event, bool isLeftMouseDown); // TODO make private or sth
+	void mouseDown(wxMouseEvent& event, bool isLeftMouseDown); // TODO make private
 	void leftMouseDown(wxMouseEvent& event);
 	void rightMouseDown(wxMouseEvent& event);
 
-	// Button events TODO wywal
+	// Button events TODO wywal te dwa na górze
 	void increaseScale(wxCommandEvent& event);
 	void decreaseScale(wxCommandEvent& event);
+	void OnPressNext(wxCommandEvent& event);
+	void OnPressBack(wxCommandEvent& event);
 
 	// Menu events
 	void OnSave(wxCommandEvent& event);
@@ -79,18 +87,6 @@ public:
 	void setHistSizes();
 	~HistoDrawPane() {
 	}
-
-	// some useful events
-	/*
-	 void mouseMoved(wxMouseEvent& event);
-
-	 void mouseWheelMoved(wxMouseEvent& event);
-	 void mouseReleased(wxMouseEvent& event);
-	 void rightClick(wxMouseEvent& event);
-	 void mouseLeftWindow(wxMouseEvent& event);
-	 void keyPressed(wxKeyEvent& event);
-	 void keyReleased(wxKeyEvent& event);
-	 */
 
 DECLARE_EVENT_TABLE()
 };

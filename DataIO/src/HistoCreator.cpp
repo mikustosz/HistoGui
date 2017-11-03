@@ -184,7 +184,6 @@ void HistoCreator::processTree() {
 				//cout << " processTree(): k: " << k << " j: " << j << endl;
 			}
 			//cout << "write j: " << j << endl;
-
 			file1.write((char*) &j, hc.vec[k].bytes); // TODO tu nie bangla
 		}
 	}

@@ -18,79 +18,84 @@
 #include <wx/wfstream.h>
 #include <wx/msgdlg.h>
 
-/**This function specifies histogram layout on each redraw of the GUI.
- * Tweak the layout here.
- */
+// TODO fix bug with the same page number during window resize
+int HistoDrawPane::getMaxColNr() {
+	int width, height;
+	GetSize(&width, &height);
+	return max(1, width / 550);
+}
+int HistoDrawPane::getMaxRowNr() {
+	int width, height;
+	GetSize(&width, &height);
+	return max(1, height / 300);
+}
+bool HistoDrawPane::histoVisible(int idx) {
+	int histosOnPage = getMaxRowNr() * getMaxColNr();
+	return (pageNr-1) * histosOnPage -1 < idx && idx < pageNr * histosOnPage;
+}
+
 void HistoDrawPane::setHistSizes() {
 	if (!hc.good)
 		return;
 	GetSize(&old_width, &old_height);
-	int rows = 2, cols = (histovec[0].size() + 1) / 2;
-	int ofs = min(old_width, old_height) / 20;
-	int sizex = old_width / cols - ofs * 2, sizey = old_height / rows - ofs * 2;
+	// cols - real number of columns including hidden ones
+	int rows = getMaxRowNr();
+	int cols = getMaxColNr();
+	int histsOnPage = rows * cols;
+
+	int ofs = 20 + min(old_width, old_height) / 40;
+	int sizex = old_width  / cols - ofs * 2;
+	int sizey = old_height / rows - ofs * 2;
 	wxSize mySize(sizex, sizey);
-	for (int i = 0; i < rows; ++i)
-		for (int j = 0; j < cols && i * cols + j < histovec[0].size(); ++j) {
-			histovec[0][i * cols + j].r = wxRect(
-					wxPoint((1 + 2 * j) * ofs + j * sizex,
-							10 + (1 + 2 * i) * ofs + i * sizey), mySize);
+
+	int maxPageNr = 1 + ((histovec[0].size() - 1) / histsOnPage); // Round up
+	int histIdx = 0;
+	for (int pg = 0; pg < maxPageNr; ++pg) {
+		for (int i = 0; i < rows; ++i) {
+			for (int j = 0; j < cols && histIdx < histovec[0].size(); ++j) {
+				histovec[0][histIdx].r = wxRect(
+						wxPoint(15 + (1 + 2 * (j % cols)) * ofs + (j % cols) * sizex, 10 + (1 + 2 * i) * ofs + i * sizey),
+						mySize
+						);
+				histIdx++;
+			}
 		}
+	}
 }
 
 BEGIN_EVENT_TABLE(HistoDrawPane, wxPanel)
-// some useful events
-/*
- EVT_MOTION(BasicDrawPane::mouseMoved)
 
- EVT_LEFT_UP(BasicDrawPane::mouseReleased)
- EVT_LEAVE_WINDOW(BasicDrawPane::mouseLeftWindow)
- EVT_KEY_DOWN(BasicDrawPane::keyPressed)
- EVT_KEY_UP(BasicDrawPane::keyReleased)
- EVT_MOUSEWHEEL(BasicDrawPane::mouseWheelMoved)
- */
 EVT_LEFT_DOWN(HistoDrawPane::leftMouseDown)
 EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
-//EVT_LEFT_UP(HistoDrawPane::rightMouseDown)
-//TODO right up
-
 
 EVT_BUTTON(INCREASE_SCALE_BUTTON_ID, HistoDrawPane::increaseScale)
 EVT_BUTTON(DECREASE_SCALE_BUTTON_ID, HistoDrawPane::decreaseScale)
 
-/// TODO
-EVT_MENU(wxID_EXIT, HistoDrawPane::OnExit)
-///
+EVT_BUTTON(NEXT_BUTTON_ID, HistoDrawPane::OnPressNext)
+EVT_BUTTON(BACK_BUTTON_ID, HistoDrawPane::OnPressBack)
 
 // catch paint events
 EVT_PAINT(HistoDrawPane::paintEvent)
 EVT_SIZE(HistoDrawPane::sizeEvent)
 END_EVENT_TABLE()
 
-// some useful events
-/*
- void BasicDrawPane::mouseMoved(wxMouseEvent& event) {}
- void BasicDrawPane::mouseDown(wxMouseEvent& event) {}
- void BasicDrawPane::mouseWheelMoved(wxMouseEvent& event) {}
- void BasicDrawPane::mouseReleased(wxMouseEvent& event) {}
- void BasicDrawPane::rightClick(wxMouseEvent& event) {}
- void BasicDrawPane::mouseLeftWindow(wxMouseEvent& event) {}
- void BasicDrawPane::keyPressed(wxKeyEvent& event) {}
- void BasicDrawPane::keyReleased(wxKeyEvent& event) {}
- */
-
 HistoDrawPane::HistoDrawPane(wxFrame* parent) : wxPanel(parent), hc("config.json") {
-	loadButton = new wxButton(this, INCREASE_SCALE_BUTTON_ID, wxT("+"),
-			wxPoint(300, 5), wxDefaultSize, 0);
-	loadButton = new wxButton(this, DECREASE_SCALE_BUTTON_ID, wxT("-"),
-			wxPoint (400, 5), wxDefaultSize, 0);
+
+	//loadButton = new wxButton(this, INCREASE_SCALE_BUTTON_ID, wxT("+"), wxPoint(300, 0), wxDefaultSize, 0);
+	nextButton = new wxButton(this, NEXT_BUTTON_ID, wxT(">"), wxPoint (200, 0), wxDefaultSize, 0);
+	backButton = new wxButton(this, BACK_BUTTON_ID, wxT("<"), wxPoint (100, 0), wxDefaultSize, 0);
 
 	// Binding menu events
 	function<void (wxCommandEvent &)> saveHandler (bind(&HistoDrawPane::OnSave, this, _1));
 	function<void (wxCommandEvent &)> loadHandler (bind(&HistoDrawPane::OnLoad, this, _1));
 	function<void (wxCommandEvent &)> resetHandler(bind(&HistoDrawPane::OnReset, this, _1));
+	function<void (wxCommandEvent &)> zoomInHandler(bind(&HistoDrawPane::increaseScale, this, _1));
+	function<void (wxCommandEvent &)> zoomOutHandler(bind(&HistoDrawPane::decreaseScale, this, _1));
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, saveHandler, wxID_SAVE);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, loadHandler, wxID_OPEN);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, resetHandler, wxID_REVERT);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, zoomInHandler, INCREASE_SCALE_BUTTON_ID);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, zoomOutHandler, DECREASE_SCALE_BUTTON_ID);
 
 	if (hc.good) {
 		histovec = hc.buildGuiHistos();
@@ -142,26 +147,26 @@ void HistoDrawPane::render(wxDC& dc) {
 	int width, height;
 	dc.GetSize(&width, &height);
 	setHistSizes();
-	dc.SetPen(wxPen( wxColor(0, 0, 0), 3)); // black line, 3 pixels thick
+	dc.SetPen(wxPen(wxColor(0, 0, 0), 3)); // black line, 3 pixels thick
 	int ofs = min(width, height) / 20;
 	int sizex = width / 2 - ofs * 3 / 2, sizey = height / 2 - ofs * 3 / 2;
 	wxSize mySize(sizex, sizey);
 
-	// Draw sig or sig + bcgr
-	for (int a = 0; a < histovec[0].size(); ++a) {
+	// Draw sig or draw sig + bcgr
+	int histosOnPage = getMaxRowNr() * getMaxColNr();
+	for (int j = (pageNr-1) * histosOnPage; j < histovec[0].size() && j < pageNr * histosOnPage; ++j) {
 		// If there is some background histos left use them
-		if (a < histovec[1].size()) {
-			drawHisto(dc, histovec[0][a].histo, histovec[1][a].histo, true, histovec[0][a].r.GetLeftTop(),
-					histovec[0][a].r.GetSize());
-		} else {// dont draw bacground
-			drawHisto(dc, histovec[0][a].histo, histovec[0][a].histo, false, histovec[0][a].r.GetLeftTop(),
-					histovec[0][a].r.GetSize());
+		if (j < histovec[1].size()) {
+			drawHisto(dc, histovec[0][j].histo, histovec[1][j].histo, true, histovec[0][j].r.GetLeftTop(),
+					histovec[0][j].r.GetSize());
+		} else { // Don't use background
+			drawHisto(dc, histovec[0][j].histo, histovec[0][j].histo, false, histovec[0][j].r.GetLeftTop(),
+					histovec[0][j].r.GetSize());
 		}
 	}
-
 }
 /** Here we draw all the histogram i.e. bins, ticks, labels, frame, and so on
- *  Takes first two histograms from histovec and tries to draw in the same rectangle
+ *  Takes first two histograms from histovec and draws in the same rectangle
  */
 void HistoDrawPane::drawHisto(wxDC& dc, MyHistogramWrapper & hist, MyHistogramWrapper & histBcgr,
 		bool isBcgr, wxPoint from, wxSize hsize) {
@@ -170,40 +175,29 @@ void HistoDrawPane::drawHisto(wxDC& dc, MyHistogramWrapper & hist, MyHistogramWr
 			wxFontWeight::wxFONTWEIGHT_NORMAL);
 	dc.SetFont(signFont);
 	dc.SetBrush(*wxWHITE_BRUSH); // blue filling
-	dc.SetPen(wxPen( wxColor(0, 0, 0), 2));
+	dc.SetPen(wxPen(wxColor(0, 0, 0), 2));
 	hsize.Set(hsize.x, hsize.y+2);
 	dc.DrawRectangle(from, hsize);
 	hsize.Set(hsize.x, hsize.y-2);
 
 	wxRect r(from.x + hsize.x / 2 - 50, from.y + hsize.y / 12 - 60, 100, 100);
-
 	wxString mstr(hist.title.c_str(), wxConvUTF8);
 	dc.DrawLabel(mstr, r, wxALIGN_CENTER);
 
 	drawTics(dc, hist, from, hsize);
 
-	float histModif = 1; // TODO delete those variables
-	float bcgrModif = 1;
-	// Get proper normalization of two histograms //TODO
-//	if (isBcgr) {
-//		if (histBcgr.hmax / histBcgr.eventNum < hist.hmax / hist.eventNum) {
-//			bcgrModif = (histBcgr.hmax * hist.eventNum) / (histBcgr.eventNum * hist.hmax);
-//		} else {
-//			histModif = (histBcgr.eventNum * hist.hmax) / (histBcgr.hmax * hist.eventNum);
-//		}
-//	}
-
-	// Draw histogram points
+	// Draw histogram poles
 	MyHistogramWrapper * hists[2];
 	hists[0] = &hist;
 	hists[1] = &histBcgr;
-	wxColour colours[2] = {wxColor(10, 10, 10), wxColor(0, 0, 220)};
+	wxColour colours[2] = {wxColor(10, 10, 100), wxColor(255, 100, 100)};
 
-	for (int k = 0; k < 2 && (k == 0 || isBcgr); ++k) {
+	int offset = 0; // Bckgr is moved one px to the right for better visibility
+	for (int k = 0; k < 2 && (k == 0 || isBcgr); ++k, offset++) {
 		float binLength = hsize.x / hists[k]->bins->size();
 		for (int i = 0; i < hists[k]->bins->size(); ++i) {
-			int x = from.x + i * hsize.x / hists[k]->bins->size();
-			int y = int(from.y + (1 - hists[k]->getNormalizedBin(i)*histoSizeModifier*histModif) * hsize.y);
+			int x = from.x + i * hsize.x / hists[k]->bins->size() + offset;
+			int y = int(from.y + (1 - hists[k]->getNormalizedBin(i)*histoSizeModifier) * hsize.y);
 
 			if (y <= from.y) { // If the height of the histogram is out of scale, mark the dot with different color
 				y = int (from.y);
@@ -218,11 +212,11 @@ void HistoDrawPane::drawHisto(wxDC& dc, MyHistogramWrapper & hist, MyHistogramWr
 
 				// Vertical lines
 				if (i == 0 || hists[k]->getNormalizedBin(i-1) == 0) {
-					// left bin side
+					// Left bin side
 					dc.DrawLine(wxPoint(x,y), wxPoint(x,from.y + hsize.y-1));
 				}
 				if (i < hists[k]->bins->size()-1) {
-					nextY = max(from.y,int(from.y + (1 - hists[k]->getNormalizedBin(i+1)*histoSizeModifier*histModif) * hsize.y));
+					nextY = max(from.y,int(from.y + (1 - hists[k]->getNormalizedBin(i+1)*histoSizeModifier) * hsize.y));
 				}
 				// right bin side
 				dc.DrawLine(wxPoint(x+binLength,y), wxPoint(x+binLength,nextY));
@@ -248,31 +242,25 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from,
 			wxFONTSTYLE_NORMAL, wxFontWeight::wxFONTWEIGHT_NORMAL);
 	dc.SetFont(ticsFont);
 	for (float j = 0; j <= 1.f; j += hist.tics_spacing) {
-		// vertical
+		// Vertical
 		dc.DrawLine(wxPoint(from.x + hsize.x * j, from.y + hsize.y-1),
 				wxPoint(from.x + hsize.x * j,
 						from.y + hsize.y - hsize.y * 0.015f));
-		// horizontal
+		// Horizontal
 		dc.DrawLine(wxPoint(from.x, from.y + hsize.y * j),
 				wxPoint(from.x + hsize.x * 0.01f, from.y + hsize.y * j));
 	}
-	for (float j = hist.numbered_tics_spacing; j <= 1.f;
-			j += hist.numbered_tics_spacing) {
-		wxRect r(from.x + hsize.x * j - 20,
-				from.y + hsize.y - 10 + fontSize * 2, 40, 20);
-		string s1 = Utils::itos<double>(hist.xmin + (hist.xmax - hist.xmin) * j,
-				2);
-		dc.DrawLabel(wxString(s1.c_str(), wxConvUTF8), r, wxALIGN_CENTER);
-	}
 
 	// Labels
-	for (float j = hist.numbered_tics_spacing; j <= 1.f;
-			j += hist.numbered_tics_spacing) {
-		wxRect r1(from.x - 20 - fontSize * 2.5, from.y + hsize.y * (1 - j) - 10,
-				40, 20);
-		string s2 = Utils::itos<double>(hist.hmin + (hist.hmax - hist.hmin)*j/histoSizeModifier,
-				2);
-		dc.DrawLabel(wxString(s2.c_str(), wxConvUTF8), r1, wxALIGN_CENTER);
+	for (float j = hist.numbered_tics_spacing; j <= 1.f; j += hist.numbered_tics_spacing) { // Horizontal labels
+		wxRect r(from.x + hsize.x * j, from.y + hsize.y + fontSize*1.4, 0, 0);
+		string s1 = Utils::itos<double>(hist.xmin + (hist.xmax - hist.xmin) * j, 0); // TODO if the nr is small you should add more decimal places
+		dc.DrawLabel(wxString(s1.c_str(), wxConvUTF8), r, wxALIGN_CENTRE);
+	}
+	for (float j = hist.numbered_tics_spacing; j <= 1.f; j += hist.numbered_tics_spacing) { // Vertical labels
+		wxRect r1(from.x - 2, from.y + hsize.y * (1 - j), 0, 0);
+		string s2 = Utils::itos<double>(hist.hmin + (hist.hmax - hist.hmin)*j/histoSizeModifier, 0);
+		dc.DrawLabel(wxString(s2.c_str(), wxConvUTF8), r1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL);
 	}
 
 	// Cuts
@@ -295,14 +283,13 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from,
 /** Here we react to clicks at point x,y, by setting cuts to the given histogram and resetting
  * all the histograms from the HistoCreator it belongs to
  */
-// TODO change for both histos
 void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 	long int x, y;
 	event.GetPosition(&x, &y);
 	wxPoint p = event.GetPosition();
 	int a = 0;
 	for (; a < histovec[0].size(); ++a)
-		if (histovec[0][a].r.Contains(p))
+		if (histovec[0][a].r.Contains(p) && histoVisible(a))
 			break;
 	if (a == histovec[0].size())
 		return;
@@ -332,20 +319,20 @@ void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 void HistoDrawPane::leftMouseDown(wxMouseEvent& event) {
 	this->mouseDown(event, LEFT_BUTTON_DOWN);
 }
-
 void HistoDrawPane::rightMouseDown(wxMouseEvent& event) {
 	this->mouseDown(event, RIGHT_BUTTON_DOWN);
 }
 void HistoDrawPane::OnReset(wxCommandEvent& event) {
-	for (int i = 0; i < histovec[0].size(); ++i) {
-		histovec[0][i].histo.setCutLow(0);
-		histovec[0][i].histo.setCutHigh(histovec[0][i].histo.bins->size());
+	for (int g = 0; g < histovec.size(); g++) {
+		for (int i = 0; i < histovec[g].size(); ++i) {
+			histovec[g][i].histo.setCutLow(0);
+			histovec[g][i].histo.setCutHigh(histovec[g][i].histo.bins->size());
+		}
 	}
 	histoSizeModifier = 0.9;
 	Refresh();
 }
 
-// TODO bcgr
 void HistoDrawPane::OnLoad(wxCommandEvent& event) {
 	wxString fileName;
 	wxFileDialog * openFileDialog = new wxFileDialog(this);
@@ -402,7 +389,6 @@ void HistoDrawPane::OnSave(wxCommandEvent& event) {
 	} else if (status == wxID_CANCEL) {
 		return;
 	}
-
 	// Create file
 	ofstream fileStream(path);
 	ostringstream stringStream;
@@ -424,3 +410,19 @@ void HistoDrawPane::OnSave(wxCommandEvent& event) {
 void HistoDrawPane::OnExit(wxCommandEvent& event) {
 	Close(true);
 }
+
+// Button handler functions
+void HistoDrawPane::OnPressNext(wxCommandEvent& event) {
+	int histosNum = histovec[0].size();
+	if (pageNr * getMaxColNr() * getMaxRowNr() < histosNum) {
+		pageNr++;
+		Refresh();
+	}
+}
+void HistoDrawPane::OnPressBack(wxCommandEvent& event) {
+	if (pageNr > 1) {
+		pageNr--;
+		Refresh();
+	}
+}
+

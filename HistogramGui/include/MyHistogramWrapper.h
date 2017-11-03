@@ -32,6 +32,7 @@ public:
 	///id of a histogram in creator
 	int histoId;
 	int cutLow = 0, cutHigh = 0;
+
 	///constructor, sets bin range and the num of bins
 	MyHistogramWrapper(int n, float xmin, float xmax);
 
@@ -45,7 +46,6 @@ public:
 	void fillPoisson(int n, float height, float k);
 	void fillRandom(int n, float hmin, float hmax);
 	void fillFermi(int n, float height, float coeff);
-	// bool testPointInside(long int x, long int y);
 protected:
 private:
 };

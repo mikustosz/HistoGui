@@ -10,51 +10,69 @@
    "histos":[
          {
             "name":"mass4Mu",
-            "bins":40,
+            "bins":128,
             "min":0,
-            "max":250
+            "max":1300
          },
          {
             "name":"massZ1",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":200
          },
          {
             "name":"massZ2",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":1000
          },
          {
             "name":"muon1ID",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":300
          },
          {
             "name":"muon2ID",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":300
          },
          {
             "name":"muon3ID",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":300
          },
          {
             "name":"muon4ID",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":300
          },
          {
             "name":"muon1Isolation",
-            "bins":40,
+            "bins":128,
             "min":0,
             "max":50
+         },
+         {
+            "name":"muon2Isolation",
+            "bins":128,
+            "min":0,
+            "max":150
+         },
+         {
+            "name":"muon3Isolation",
+            "bins":128,
+            "min":0,
+            "max":150
+         },
+         {
+            "name":"muon4Isolation",
+            "bins":128,
+            "min":0,
+            "max":260
          }
    ]
   },
@@ -71,7 +89,7 @@
             "name":"mass4Mu",
             "bins":128,
             "min":0,
-            "max":500
+            "max":1300
          },
          {
             "name":"massZ1",
@@ -114,6 +132,24 @@
             "bins":128,
             "min":0,
             "max":50
+         },
+         {
+            "name":"muon2Isolation",
+            "bins":128,
+            "min":0,
+            "max":150
+         },
+         {
+            "name":"muon3Isolation",
+            "bins":128,
+            "min":0,
+            "max":150
+         },
+         {
+            "name":"muon4Isolation",
+            "bins":128,
+            "min":0,
+            "max":260
          }
    ]
   }

@@ -20,14 +20,12 @@ class HistoCreator;
 using namespace boost::property_tree;
 ///Wrapped histogram and its dimensions on the screen
 struct HistoGraph {
-	///wrapper
+	/// Wrapper
 	MyHistogramWrapper histo;
-	///Position and size
+	/// Position and size
 	wxRect r;
-	///wrapped histo constructor
-	HistoGraph(int bin, float min, float max) :
-			histo(bin, min, max) {
-
+	/// Wrapped histo constructor
+	HistoGraph(int bin, float min, float max) : histo(bin, min, max) {
 	}
 
 };
@@ -40,7 +38,7 @@ public:
 	HistoContainer(string json_path);
 	///HistoCreators, construct histograms, store bins to display
 	vector<HistoCreator*> creators;
-	;
+
 	///Set binding between data and GUI objects
 	vector <vector<HistoGraph> > buildGuiHistos();
 	/// Reset and fill bins with experimental data, loaded from file/RAM cache

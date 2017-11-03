@@ -42,7 +42,7 @@ vector <vector<HistoGraph> > HistoContainer::buildGuiHistos() {
 	int cNum = 0;
 	for (auto c : creators) {
 		if (cNum > 1) {
-			cout << "Wrong number of files, there should only be 1 or 2\n";
+			cerr << "Wrong number of files, there should only be 1 or 2\n";
 			exit(1);
 		}
 		auto it = c->histos.begin();
