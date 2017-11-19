@@ -5,7 +5,7 @@ LINKER = `wx-config --libs` -L../DataIO/lib -Wl,-rpath,/usr/local/lib/ -ldataio 
 FLAGS = -std=c++11 -g
 OBJ = $(patsubst src/%.cpp, obj/%.o, ${SRC})
 
-myApp : ${OBJ}
+CMSlab : ${OBJ}
 	g++ -o $@ $^ -Wl,--no-as-needed ${LINKER} ${ROOT_LIBS}
 	@echo ${__SRC}
 
@@ -16,3 +16,4 @@ obj/%.o : src/%.cpp
 	clean
 clean :
 	rm -f obj/*.o
+	rm -f CMSlab

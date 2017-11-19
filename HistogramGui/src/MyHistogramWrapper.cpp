@@ -96,6 +96,13 @@ void MyHistogramWrapper::setCutLow(int b) {
 	creator->cutsLow[histoId] = b;
 	creator->createHistos();
 }
+/**Sets lower cut without histogram recreation
+ *
+ */
+void MyHistogramWrapper::setCutLowFast(int b) {
+	cutLow = b;
+	creator->cutsLow[histoId] = b;
+}
 
 /**Sets higher cut and triggers histogram recreation
  *
@@ -103,5 +110,17 @@ void MyHistogramWrapper::setCutLow(int b) {
 void MyHistogramWrapper::setCutHigh(int b) {
 	cutHigh = b;
 	creator->cutsHigh[histoId] = b;
+	creator->createHistos();
+}
+
+/** Sets higher cut
+ *
+ */
+void MyHistogramWrapper::setCutHighFast(int b) {
+	cutHigh = b;
+	creator->cutsHigh[histoId] = b;
+}
+
+void MyHistogramWrapper::createHistos() {
 	creator->createHistos();
 }

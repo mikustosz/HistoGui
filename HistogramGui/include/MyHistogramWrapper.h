@@ -23,7 +23,7 @@ class MyHistogramWrapper {
 public:
 	float xmin, xmax;
 	float hmin, hmax;
-	float tics_spacing = 0.1, numbered_tics_spacing = 0.2;
+	float tics_spacing = 0.1, numbered_tics_spacing = 0.1;
 	string title;
 	///pointer to vector owned by creator
 	vector<unsigned int> * bins;
@@ -42,6 +42,9 @@ public:
 	void setCut(int b);
 	void setCutLow(int b);
 	void setCutHigh(int b);
+	void setCutLowFast(int b);
+	void setCutHighFast(int b);
+	void createHistos();
 	float getNormalizedBin(int num);
 	void fillPoisson(int n, float height, float k);
 	void fillRandom(int n, float hmin, float hmax);

@@ -17,6 +17,7 @@
 #include <wx/filedlg.h>
 #include <wx/wfstream.h>
 #include <wx/msgdlg.h>
+#include <sstream>
 
 // TODO fix bug with the same page number during window resize
 int HistoDrawPane::getMaxColNr() {
@@ -67,6 +68,7 @@ BEGIN_EVENT_TABLE(HistoDrawPane, wxPanel)
 
 EVT_LEFT_DOWN(HistoDrawPane::leftMouseDown)
 EVT_RIGHT_DOWN(HistoDrawPane::rightMouseDown)
+EVT_MOTION(HistoDrawPane::mouseMoved)
 
 EVT_BUTTON(INCREASE_SCALE_BUTTON_ID, HistoDrawPane::increaseScale)
 EVT_BUTTON(DECREASE_SCALE_BUTTON_ID, HistoDrawPane::decreaseScale)
@@ -81,9 +83,14 @@ END_EVENT_TABLE()
 
 HistoDrawPane::HistoDrawPane(wxFrame* parent) : wxPanel(parent), hc("config.json") {
 
-	//loadButton = new wxButton(this, INCREASE_SCALE_BUTTON_ID, wxT("+"), wxPoint(300, 0), wxDefaultSize, 0);
-	nextButton = new wxButton(this, NEXT_BUTTON_ID, wxT(">"), wxPoint (200, 0), wxDefaultSize, 0);
-	backButton = new wxButton(this, BACK_BUTTON_ID, wxT("<"), wxPoint (100, 0), wxDefaultSize, 0);
+
+	int textHeight = 6;
+	wxSize * buttonSize = new wxSize(150, 30);
+	nextButton = new wxButton(this, NEXT_BUTTON_ID, wxT(">"), wxPoint(GetVirtualSize().GetWidth() , 0), *buttonSize, 0);
+	backButton = new wxButton(this, BACK_BUTTON_ID, wxT("<"), wxPoint(0, 0), *buttonSize, 0);
+
+	new wxStaticText(this, PAGE_NR_TEXT_ID, wxT("Page: "), wxPoint(165, textHeight), wxDefaultSize, 0);
+	pageNumberText = new wxStaticText(this, PAGE_NR_TEXT_ID, to_string(pageNr), wxPoint(200, textHeight), wxDefaultSize, 0);
 
 	// Binding menu events
 	function<void (wxCommandEvent &)> saveHandler (bind(&HistoDrawPane::OnSave, this, _1));
@@ -91,11 +98,19 @@ HistoDrawPane::HistoDrawPane(wxFrame* parent) : wxPanel(parent), hc("config.json
 	function<void (wxCommandEvent &)> resetHandler(bind(&HistoDrawPane::OnReset, this, _1));
 	function<void (wxCommandEvent &)> zoomInHandler(bind(&HistoDrawPane::increaseScale, this, _1));
 	function<void (wxCommandEvent &)> zoomOutHandler(bind(&HistoDrawPane::decreaseScale, this, _1));
+	function<void (wxCommandEvent &)> toggleBacgkroundHandler(bind(&HistoDrawPane::toggleBackground, this, _1));
+	function<void (wxCommandEvent &)> aboutHandler(bind(&HistoDrawPane::about, this, _1));
+	function<void (wxCommandEvent &)> usageHandler(bind(&HistoDrawPane::usage, this, _1));
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, saveHandler, wxID_SAVE);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, loadHandler, wxID_OPEN);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, resetHandler, wxID_REVERT);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, zoomInHandler, INCREASE_SCALE_BUTTON_ID);
     parent->Bind(wxEVT_COMMAND_MENU_SELECTED, zoomOutHandler, DECREASE_SCALE_BUTTON_ID);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, toggleBacgkroundHandler, TOGGLE_BACKGROUND_ID);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, aboutHandler, ABOUT_ID);
+    parent->Bind(wxEVT_COMMAND_MENU_SELECTED, usageHandler, USAGE_ID);
+    // Bind key event
+    parent->Bind(wxEVT_CHAR_HOOK, &HistoDrawPane::OnKeyDown, this);
 
 	if (hc.good) {
 		histovec = hc.buildGuiHistos();
@@ -109,6 +124,8 @@ HistoDrawPane::HistoDrawPane(wxFrame* parent) : wxPanel(parent), hc("config.json
 		}
 		setHistSizes();
 	}
+	new wxStaticText(this, EVENT_NR_TEXT_ID, wxT("Events: "), wxPoint(220, textHeight), wxDefaultSize, 0);
+	eventNumberText = new wxStaticText(this, EVENT_NR_TEXT_ID, to_string(getEvents()), wxPoint(264, textHeight), wxDefaultSize, 0);
 }
 
 /**
@@ -151,12 +168,14 @@ void HistoDrawPane::render(wxDC& dc) {
 	int ofs = min(width, height) / 20;
 	int sizex = width / 2 - ofs * 3 / 2, sizey = height / 2 - ofs * 3 / 2;
 	wxSize mySize(sizex, sizey);
+	// Next button always on the right side of the window
+	nextButton->Move(GetVirtualSize().GetWidth()-150, 0);
 
 	// Draw sig or draw sig + bcgr
 	int histosOnPage = getMaxRowNr() * getMaxColNr();
 	for (int j = (pageNr-1) * histosOnPage; j < histovec[0].size() && j < pageNr * histosOnPage; ++j) {
 		// If there is some background histos left use them
-		if (j < histovec[1].size()) {
+		if (j < histovec[1].size() && backgrVisible) {
 			drawHisto(dc, histovec[0][j].histo, histovec[1][j].histo, true, histovec[0][j].r.GetLeftTop(),
 					histovec[0][j].r.GetSize());
 		} else { // Don't use background
@@ -252,14 +271,14 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from,
 	}
 
 	// Labels
-	for (float j = hist.numbered_tics_spacing; j <= 1.f; j += hist.numbered_tics_spacing) { // Horizontal labels
+	for (float j = 0; j <= 1.f; j += hist.numbered_tics_spacing) { // Horizontal labels
 		wxRect r(from.x + hsize.x * j, from.y + hsize.y + fontSize*1.4, 0, 0);
-		string s1 = Utils::itos<double>(hist.xmin + (hist.xmax - hist.xmin) * j, 0); // TODO if the nr is small you should add more decimal places
+		string s1 = Utils::format(hist.xmin + (hist.xmax - hist.xmin) * j, 2);
 		dc.DrawLabel(wxString(s1.c_str(), wxConvUTF8), r, wxALIGN_CENTRE);
 	}
 	for (float j = hist.numbered_tics_spacing; j <= 1.f; j += hist.numbered_tics_spacing) { // Vertical labels
 		wxRect r1(from.x - 2, from.y + hsize.y * (1 - j), 0, 0);
-		string s2 = Utils::itos<double>(hist.hmin + (hist.hmax - hist.hmin)*j/histoSizeModifier, 0);
+		string s2 = Utils::format(hist.hmin + (hist.hmax - hist.hmin)*j/histoSizeModifier, 2);
 		dc.DrawLabel(wxString(s2.c_str(), wxConvUTF8), r1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL);
 	}
 
@@ -280,6 +299,15 @@ void HistoDrawPane::drawTics(wxDC& dc, MyHistogramWrapper& hist, wxPoint from,
 	}
 	dc.SetPen(wxPen( wxColor(0, 0, 0), 1));
 }
+// Function returns current number of events (regarding all cuts)
+int HistoDrawPane::getEvents() {
+	int binSum = 0;
+	for (auto b: * histovec[0][0].histo.bins) {
+		binSum += b;
+	}
+	return binSum;
+}
+
 /** Here we react to clicks at point x,y, by setting cuts to the given histogram and resetting
  * all the histograms from the HistoCreator it belongs to
  */
@@ -293,12 +321,12 @@ void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 			break;
 	if (a == histovec[0].size())
 		return;
-
 	int cut = histovec[0][a].histo.bins->size() * ((double) (x - histovec[0][a].r.x))
 			/ (histovec[0][a].r.width);
 	if (isLeftMouseDown) {
 		if (histovec[0][a].histo.cutHigh && cut >= histovec[0][a].histo.cutHigh)
 			return;
+		m_dragging = 1;
 		histovec[0][a].histo.setCutLow(cut);
 		if (a < histovec[1].size()) { // Background histogram
 			histovec[1][a].histo.setCutLow(cut);
@@ -307,13 +335,27 @@ void HistoDrawPane::mouseDown(wxMouseEvent& event, bool isLeftMouseDown) {
 		cut++;
 		if (cut <= histovec[0][a].histo.cutLow)
 			return;
+		m_dragging = 2;
 		histovec[0][a].histo.setCutHigh(cut);
 		if (a < histovec[1].size()) { // Background histogram
 			histovec[1][a].histo.setCutHigh(cut);
 		}
 	}
-
+	eventNumberText->SetLabel(to_string(getEvents()));
 	Refresh();
+}
+
+void HistoDrawPane::mouseMoved(wxMouseEvent& event) {
+    if (event.Dragging()) {
+    	switch(m_dragging) {
+    	case 1:
+    		mouseDown(event, LEFT_BUTTON_DOWN);
+    		break;
+    	case 2:
+    		mouseDown(event, RIGHT_BUTTON_DOWN);
+    		break;
+    	}
+    }
 }
 
 void HistoDrawPane::leftMouseDown(wxMouseEvent& event) {
@@ -325,11 +367,16 @@ void HistoDrawPane::rightMouseDown(wxMouseEvent& event) {
 void HistoDrawPane::OnReset(wxCommandEvent& event) {
 	for (int g = 0; g < histovec.size(); g++) {
 		for (int i = 0; i < histovec[g].size(); ++i) {
-			histovec[g][i].histo.setCutLow(0);
-			histovec[g][i].histo.setCutHigh(histovec[g][i].histo.bins->size());
+			histovec[g][i].histo.setCutLowFast(0);
+			histovec[g][i].histo.setCutHighFast(histovec[g][i].histo.bins->size());
 		}
 	}
+	histovec[0][0].histo.createHistos();
+	if (histovec.size() > 1) {
+		histovec[1][0].histo.createHistos();
+	}
 	histoSizeModifier = 0.9;
+	eventNumberText->SetLabel(to_string(getEvents()));
 	Refresh();
 }
 
@@ -348,13 +395,22 @@ void HistoDrawPane::OnLoad(wxCommandEvent& event) {
 		}
 		for (int i = 0; i < histNum; ++i) {
 			if (infile >> cutLow >> cutHigh) {
-				histovec[0][i].histo.setCutLow(cutLow);
-				histovec[0][i].histo.setCutHigh(cutHigh);
+				histovec[0][i].histo.setCutLowFast(cutLow);
+				histovec[0][i].histo.setCutHighFast(cutHigh);
+				if (histovec.size() > 1 && histovec[1].size() > i) {
+					histovec[1][i].histo.setCutLowFast(cutLow);
+					histovec[1][i].histo.setCutHighFast(cutHigh);
+				}
 			} else {
 				wxMessageBox(wxT("The file is too short."), wxT("Load failure"), wxICON_ERROR);
 				return;
 			}
 		}
+		histovec[0][0].histo.createHistos();
+		if (histovec.size() > 1) {
+			histovec[1][0].histo.createHistos();
+		}
+		eventNumberText->SetLabel(to_string(getEvents()));
 		Refresh();
 	}
 }
@@ -416,13 +472,53 @@ void HistoDrawPane::OnPressNext(wxCommandEvent& event) {
 	int histosNum = histovec[0].size();
 	if (pageNr * getMaxColNr() * getMaxRowNr() < histosNum) {
 		pageNr++;
+		pageNumberText->SetLabel(to_string(pageNr));
 		Refresh();
 	}
 }
 void HistoDrawPane::OnPressBack(wxCommandEvent& event) {
 	if (pageNr > 1) {
 		pageNr--;
+		pageNumberText->SetLabel(to_string(pageNr));
 		Refresh();
 	}
+}
+
+// Key handler function
+void HistoDrawPane::OnKeyDown(wxKeyEvent& event) {
+    switch((int)event.GetKeyCode()) {
+    case 314: // Key code for ←
+    	OnPressBack(* new wxCommandEvent());
+    	break;
+    case 316: // Key code for →
+    	OnPressNext(* new wxCommandEvent());
+    	break;
+    case 315: // Key code for ↑
+    	increaseScale(* new wxCommandEvent());
+    	break;
+    case 317: // Key code for ↓
+    	decreaseScale(* new wxCommandEvent());
+    	break;
+
+    }
+    event.Skip();
+}
+void HistoDrawPane::toggleBackground(wxCommandEvent& event) {
+	backgrVisible = !backgrVisible;
+	Refresh();
+}
+void HistoDrawPane::about(wxCommandEvent& event) {
+	wxMessageBox(
+			* new wxString(//ser
+				"The program CMS lab is designed to provide easy tool for data analysis from particle detectors from Large Hadron Collider.\n\nCMS lab was first developed by Krystian Zawistowski in 2015, later the program was improved by Michał Kustosz in 2017 as a Bachelor thesis under supervision of dr hab. Artur Kalinowski."
+				, wxConvUTF8)
+			);
+}
+void HistoDrawPane::usage(wxCommandEvent& event) {
+	wxMessageBox(
+			* new wxString(//ser
+				"To cut histogram from the left/right side click (or hold) left/right mouse button\nTo move between histogram pages press left/right arrow on the screen or keyboard\nTo zoom in/out use up/down keys on the keyboard\nTo toggle the background histogram press 'b'\nTo help somebody donate money here https://www.caritas.org/donate-now/"
+				, wxConvUTF8)
+			);
 }
 

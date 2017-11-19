@@ -10,6 +10,8 @@ public:
 
     wxMenuBar *menubar;
     wxMenu *file;
+    wxMenu *view;
+    wxMenu *help;
 };
 
 #endif // _MENUXXX_H

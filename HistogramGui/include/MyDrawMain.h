@@ -13,6 +13,11 @@
 #define BACK_BUTTON_ID 102
 #define INCREASE_SCALE_BUTTON_ID 103
 #define DECREASE_SCALE_BUTTON_ID 104
+#define PAGE_NR_TEXT_ID 105
+#define TOGGLE_BACKGROUND_ID 106
+#define ABOUT_ID 107
+#define EVENT_NR_TEXT_ID 108
+#define USAGE_ID 109
 #define LEFT_BUTTON_DOWN true
 #define RIGHT_BUTTON_DOWN false
 
@@ -44,12 +49,21 @@ public:
 	// Percentage of height reserved for histogram data (default - 90% from down to up)
 	float histoSizeModifier = 0.9;
 
+	int backgrVisible = 1;
+
 	// For histograms pagination
 	int pageNr = 1;
 
 	// Buttons
 	wxButton * nextButton;
 	wxButton * backButton;
+
+	// Texts
+ 	wxStaticText * pageNumberText;
+ 	wxStaticText * eventNumberText;
+
+ 	// Is user holding cut right now?
+ 	int m_dragging = 0;
 
 	///Container for histoCreators
 	HistoContainer hc;
@@ -67,22 +81,31 @@ public:
 			wxPoint from, wxSize hsize);
 	void drawTics(wxDC& dc, MyHistogramWrapper & h, wxPoint from, wxSize hsize);
 
+	int getEvents();
+
 	// Mouse events
-	void mouseDown(wxMouseEvent& event, bool isLeftMouseDown); // TODO make private
+	void mouseDown(wxMouseEvent& event, bool isLeftMouseDown);
 	void leftMouseDown(wxMouseEvent& event);
 	void rightMouseDown(wxMouseEvent& event);
+	void mouseMoved(wxMouseEvent& event);
 
-	// Button events TODO wywal te dwa na górze
+	// Button events
 	void increaseScale(wxCommandEvent& event);
 	void decreaseScale(wxCommandEvent& event);
 	void OnPressNext(wxCommandEvent& event);
 	void OnPressBack(wxCommandEvent& event);
+
+	// Key events
+    void OnKeyDown(wxKeyEvent& event);
 
 	// Menu events
 	void OnSave(wxCommandEvent& event);
 	void OnLoad(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 	void OnReset(wxCommandEvent& event);
+	void toggleBackground(wxCommandEvent& event);
+	void about(wxCommandEvent& event);
+	void usage(wxCommandEvent& event);
 
 	void setHistSizes();
 	~HistoDrawPane() {
